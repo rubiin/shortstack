@@ -81,8 +81,11 @@ function RootComponent() {
 }
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
+  // The theme script runs before hydration and writes data-theme on <html>,
+  // which the server render cannot know about. That pre-hydration attribute is
+  // intentional, so React should not report it as a mismatch.
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <ThemeInitScript />
         <HeadContent />
