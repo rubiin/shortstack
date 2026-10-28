@@ -7,6 +7,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/rubiin/shortstack/actions/workflows/ci.yml"><img src="https://github.com/rubiin/shortstack/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-%3E%3D22.12-339933?logo=nodedotjs&logoColor=white" alt="Node.js 22.12+"></a>
   <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React 19"></a>
   <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white" alt="Vite 8"></a>
