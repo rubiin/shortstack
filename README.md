@@ -12,6 +12,7 @@
   <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white" alt="Vite 8"></a>
   <a href="https://www.sqlite.org/"><img src="https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white" alt="SQLite"></a>
   <a href="https://vitest.dev/"><img src="https://img.shields.io/badge/tests-Vitest%20%2B%20Playwright-25C16F?logo=vitest&logoColor=white" alt="Vitest + Playwright"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue?logo=gnu&logoColor=white" alt="GPL-3.0"></a>
 </p>
 
 <p align="center">
