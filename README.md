@@ -1,6 +1,32 @@
-# Shortstack
+<p align="center">
+  <img src="docs/logo.svg" alt="Shortstack" width="320">
+</p>
 
-A self-hosted link management platform for marketing teams: branded short links, QR codes, privacy-minimized analytics, and CSV bulk import — built on TanStack Start, SQLite, and a background job worker.
+<p align="center">
+  <strong>A self-hosted link management platform for marketing teams.</strong>
+</p>
+
+<p align="center">
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-%3E%3D22.12-339933?logo=nodedotjs&logoColor=white" alt="Node.js 22.12+"></a>
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React 19"></a>
+  <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white" alt="Vite 8"></a>
+  <a href="https://www.sqlite.org/"><img src="https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white" alt="SQLite"></a>
+  <a href="https://vitest.dev/"><img src="https://img.shields.io/badge/tests-Vitest%20%2B%20Playwright-25C16F?logo=vitest&logoColor=white" alt="Vitest + Playwright"></a>
+</p>
+
+<p align="center">
+  Branded short links, QR codes, privacy-minimized analytics, and CSV bulk import — built on TanStack Start, SQLite, and a background job worker.
+</p>
+
+## Screenshots
+
+| Landing page | Link desk |
+| --- | --- |
+| <img src="docs/screenshots/landing.png" alt="Shortstack landing page" width="100%"> | <img src="docs/screenshots/links.png" alt="Link desk with stats, filters, and the link table" width="100%"> |
+
+| Analytics | Bulk import |
+| --- | --- |
+| <img src="docs/screenshots/analytics.png" alt="Privacy-minimized analytics dashboard" width="100%"> | <img src="docs/screenshots/import.png" alt="CSV bulk import wizard" width="100%"> |
 
 ## Features
 
