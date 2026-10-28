@@ -1,8 +1,8 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getRequestIP, setResponseHeader } from '@tanstack/react-start/server'
 import { z } from 'zod'
+
 import { requireSessionUser } from '../auth'
-import { rateLimitOrThrow } from '../rate-limit'
 import {
   anonymousAuthor,
   checkSlugAvailability,
@@ -14,6 +14,7 @@ import {
   setArchived,
   updateLink,
 } from '../links'
+import { rateLimitOrThrow } from '../rate-limit'
 import { actionError, ok, fail, type ActionResult } from './result'
 
 const listSchema = z.object({
@@ -77,7 +78,9 @@ export const getEditorDataFn = createServerFn({ method: 'GET' })
   })
 
 export const createAnonymousLinkFn = createServerFn({ method: 'POST' })
-  .validator((input: unknown) => z.object({ destinationUrl: z.string().min(1).max(3_000) }).parse(input))
+  .validator((input: unknown) =>
+    z.object({ destinationUrl: z.string().min(1).max(3_000) }).parse(input),
+  )
   .handler(async ({ data }): Promise<ActionResult<{ shortUrl: string }>> => {
     try {
       const ip = requestFingerprint('anon-link-create')
@@ -125,7 +128,9 @@ export const createLinkFn = createServerFn({ method: 'POST' })
   })
 
 export const updateLinkFn = createServerFn({ method: 'POST' })
-  .validator((input: unknown) => linkInputSchema.extend({ linkId: z.string().min(3).max(100) }).parse(input))
+  .validator((input: unknown) =>
+    linkInputSchema.extend({ linkId: z.string().min(3).max(100) }).parse(input),
+  )
   .handler(async ({ data }): Promise<ActionResult<{ linkId: string }>> => {
     try {
       const user = requireSessionUser()

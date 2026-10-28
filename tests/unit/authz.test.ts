@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import {
   AuthorizationError,
   belongsToWorkspace,
@@ -31,7 +32,10 @@ describe('typed errors', () => {
     expect(new AuthorizationError().status).toBe(403)
     expect(new NotFoundError().status).toBe(404)
     expect(new ConflictError().status).toBe(409)
-    expect(new ValidationError('bad', { slug: 'no' })).toMatchObject({ status: 400, fields: { slug: 'no' } })
+    expect(new ValidationError('bad', { slug: 'no' })).toMatchObject({
+      status: 400,
+      fields: { slug: 'no' },
+    })
     expect(new RateLimitError(12)).toMatchObject({ status: 429, retryAfterSeconds: 12 })
   })
 })

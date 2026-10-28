@@ -3,7 +3,12 @@ import { logger } from '../log'
 
 export type PurgeResult =
   | { ok: true; mode: 'cloudflare' | 'disabled-fake'; purged: number }
-  | { ok: false; code: 'timeout' | 'unauthorized' | 'provider_error' | 'network_error'; message: string; status?: number }
+  | {
+      ok: false
+      code: 'timeout' | 'unauthorized' | 'provider_error' | 'network_error'
+      message: string
+      status?: number
+    }
 
 export interface CachePurgeAdapter {
   purge(urls: string[]): Promise<PurgeResult>
@@ -35,14 +40,20 @@ export class CloudflareCacheAdapter implements CachePurgeAdapter {
   ) {}
 
   async purge(urls: string[]): Promise<PurgeResult> {
-    const files = Array.from(new Set(urls.map(normalizeUrl).filter((url): url is string => Boolean(url)))).slice(0, 30)
+    const files = Array.from(
+      new Set(urls.map(normalizeUrl).filter((url): url is string => Boolean(url))),
+    ).slice(0, 30)
     if (!files.length) return { ok: true, mode: 'disabled-fake', purged: 0 }
     if (!this.options.enabled) {
       logger.info('cache purge skipped (adapter disabled)', { count: files.length })
       return { ok: true, mode: 'disabled-fake', purged: 0 }
     }
     if (!this.options.apiToken || !this.options.zoneId) {
-      return { ok: false, code: 'unauthorized', message: 'Cloudflare token or zone is not configured' }
+      return {
+        ok: false,
+        code: 'unauthorized',
+        message: 'Cloudflare token or zone is not configured',
+      }
     }
 
     const fetchImpl = this.options.fetchImpl ?? fetch
@@ -60,7 +71,12 @@ export class CloudflareCacheAdapter implements CachePurgeAdapter {
         },
       )
       if (response.status === 401 || response.status === 403) {
-        return { ok: false, code: 'unauthorized', message: 'Cloudflare rejected the API token', status: response.status }
+        return {
+          ok: false,
+          code: 'unauthorized',
+          message: 'Cloudflare rejected the API token',
+          status: response.status,
+        }
       }
       if (!response.ok) {
         return {
@@ -72,7 +88,11 @@ export class CloudflareCacheAdapter implements CachePurgeAdapter {
       }
       const body = (await response.json().catch(() => ({}))) as { success?: boolean }
       if (body.success === false) {
-        return { ok: false, code: 'provider_error', message: 'Cloudflare did not accept the purge request' }
+        return {
+          ok: false,
+          code: 'provider_error',
+          message: 'Cloudflare did not accept the purge request',
+        }
       }
       logger.info('cache purged', { count: files.length })
       return { ok: true, mode: 'cloudflare', purged: files.length }

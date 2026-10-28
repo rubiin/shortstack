@@ -1,5 +1,7 @@
 import { mkdirSync } from 'node:fs'
+
 import { test } from '@playwright/test'
+
 import { signIn } from './support'
 
 const authDir = 'tests/e2e/.auth'

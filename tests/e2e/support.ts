@@ -55,9 +55,5 @@ export async function requestShortLink(
 }
 
 export function totalClicks(page: Page): Promise<string> {
-  return page
-    .locator('.clicks-cell')
-    .filter({ hasText: 'Total' })
-    .locator('strong')
-    .innerText()
+  return page.locator('.clicks-cell').filter({ hasText: 'Total' }).locator('strong').innerText()
 }

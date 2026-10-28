@@ -1,9 +1,10 @@
 import { pathToFileURL } from 'node:url'
+
+import { classifyDevice, coarseCountry, referrerDomain } from '../src/domain/privacy'
 import { getConfig } from '../src/server/config'
 import { getDb, migrate } from '../src/server/db'
-import { hashPassword } from '../src/server/password'
 import { newId, nowIso } from '../src/server/ids'
-import { classifyDevice, coarseCountry, referrerDomain } from '../src/domain/privacy'
+import { hashPassword } from '../src/server/password'
 
 type SeedLink = {
   id: string
@@ -72,7 +73,8 @@ export function seedDemoData(): { seeded: boolean; reason?: string } {
     {
       id: 'lnk_fieldguide',
       slug: 'spring-field-guide',
-      destination: 'https://northstar.example/campaigns/spring/field-guide?utm_source=shortstack&utm_medium=email',
+      destination:
+        'https://northstar.example/campaigns/spring/field-guide?utm_source=shortstack&utm_medium=email',
       campaignId: 'cmp_spring',
       note: 'Email hero CTA. Keep live through the launch window.',
       expiresInDays: 12,
@@ -167,15 +169,47 @@ export function seedDemoData(): { seeded: boolean; reason?: string } {
       `INSERT INTO users (id, workspace_id, email, name, role, password_hash, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
     )
-    insertUser.run(ownerId, workspaceId, 'maya@northstar.example', 'Maya Chen', 'owner', passwordHash, isoAtDaysAgo(120))
-    insertUser.run(memberId, workspaceId, 'theo@northstar.example', 'Theo Park', 'member', passwordHash, isoAtDaysAgo(80))
-    insertUser.run(riverUserId, otherWorkspaceId, 'ravi@river.example', 'Ravi Shah', 'owner', passwordHash, isoAtDaysAgo(60))
+    insertUser.run(
+      ownerId,
+      workspaceId,
+      'maya@northstar.example',
+      'Maya Chen',
+      'owner',
+      passwordHash,
+      isoAtDaysAgo(120),
+    )
+    insertUser.run(
+      memberId,
+      workspaceId,
+      'theo@northstar.example',
+      'Theo Park',
+      'member',
+      passwordHash,
+      isoAtDaysAgo(80),
+    )
+    insertUser.run(
+      riverUserId,
+      otherWorkspaceId,
+      'ravi@river.example',
+      'Ravi Shah',
+      'owner',
+      passwordHash,
+      isoAtDaysAgo(60),
+    )
 
     const insertDomain = db.prepare(
       `INSERT INTO domains (id, workspace_id, hostname, origin, status, is_default, created_at, verified_at)
        VALUES (?, ?, ?, ?, 'active', ?, ?, ?)`,
     )
-    insertDomain.run(domainId, workspaceId, primaryHost, primaryOrigin, 1, isoAtDaysAgo(118), isoAtDaysAgo(117))
+    insertDomain.run(
+      domainId,
+      workspaceId,
+      primaryHost,
+      primaryOrigin,
+      1,
+      isoAtDaysAgo(118),
+      isoAtDaysAgo(117),
+    )
     insertDomain.run(
       'dom_river',
       otherWorkspaceId,
@@ -293,7 +327,11 @@ export function seedDemoData(): { seeded: boolean; reason?: string } {
     ).run(
       workspaceId,
       ownerId,
-      JSON.stringify({ from: isoAtDaysAgo(30).slice(0, 10), to: now.slice(0, 10), campaignId: null }),
+      JSON.stringify({
+        from: isoAtDaysAgo(30).slice(0, 10),
+        to: now.slice(0, 10),
+        campaignId: null,
+      }),
       isoAtDaysAgo(2),
       isoAtDaysAgo(2),
       isoAtDaysAgo(2),

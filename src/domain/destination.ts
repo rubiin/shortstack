@@ -1,16 +1,18 @@
 export const DESTINATION_MAX_LENGTH = 2048
 
-export type DestinationResult =
-  | { ok: true; url: string }
-  | { ok: false; error: string }
+export type DestinationResult = { ok: true; url: string } | { ok: false; error: string }
 
 export function normalizeDestination(input: string): DestinationResult {
   const value = input.trim()
   if (!value) return { ok: false, error: 'Enter a destination URL.' }
   if (value.length > DESTINATION_MAX_LENGTH) {
-    return { ok: false, error: `Destination URLs can be at most ${DESTINATION_MAX_LENGTH} characters.` }
+    return {
+      ok: false,
+      error: `Destination URLs can be at most ${DESTINATION_MAX_LENGTH} characters.`,
+    }
   }
   // Control characters can break HTTP headers or hide a second URL in UI.
+  // eslint-disable-next-line no-control-regex
   if (/[\u0000-\u001f\u007f]/.test(value)) {
     return { ok: false, error: 'Destination contains control characters.' }
   }

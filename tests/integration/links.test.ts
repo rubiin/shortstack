@@ -1,4 +1,12 @@
 import { describe, expect, it } from 'vitest'
+
+import {
+  AuthorizationError,
+  ConflictError,
+  NotFoundError,
+  ValidationError,
+} from '../../src/domain/authz'
+import { getDb } from '../../src/server/db'
 import {
   anonymousAuthor,
   checkSlugAvailability,
@@ -8,8 +16,6 @@ import {
   setArchived,
   updateLink,
 } from '../../src/server/links'
-import { getDb } from '../../src/server/db'
-import { AuthorizationError, ConflictError, NotFoundError, ValidationError } from '../../src/domain/authz'
 import { countClicks, insertLink, seedWorkspace } from '../helpers'
 
 describe('createLink', () => {
@@ -41,7 +47,13 @@ describe('createLink', () => {
         destinationUrl: 'https://example.com/other',
       }),
     ).toThrow(ValidationError)
-    expect(checkSlugAvailability({ workspaceId: fixture.workspaceId, domainId: fixture.domainId, slug: 'Launch' })).toMatchObject({
+    expect(
+      checkSlugAvailability({
+        workspaceId: fixture.workspaceId,
+        domainId: fixture.domainId,
+        slug: 'Launch',
+      }),
+    ).toMatchObject({
       normalized: 'launch',
       available: false,
     })
@@ -82,7 +94,9 @@ describe('createLink', () => {
     )
     expect(attempts.filter((result) => result.status === 'fulfilled')).toHaveLength(1)
     expect(attempts.filter((result) => result.status === 'rejected')).toHaveLength(3)
-    const row = getDb().prepare('SELECT count(*) AS n FROM short_links WHERE slug = ?').get('race-winner') as { n: number }
+    const row = getDb()
+      .prepare('SELECT count(*) AS n FROM short_links WHERE slug = ?')
+      .get('race-winner') as { n: number }
     expect(row.n).toBe(1)
   })
 
@@ -140,9 +154,15 @@ describe('anonymous homepage links', () => {
   it('creates the shared anonymous author on first use', () => {
     const fixture = seedWorkspace({ domainId: 'dom_primary' })
     const author = anonymousAuthor('dom_primary')
-    expect(author).toMatchObject({ id: 'usr_anonymous', workspaceId: fixture.workspaceId, role: 'member' })
+    expect(author).toMatchObject({
+      id: 'usr_anonymous',
+      workspaceId: fixture.workspaceId,
+      role: 'member',
+    })
 
-    const row = getDb().prepare('SELECT workspace_id, role, disabled_at FROM users WHERE id = ?').get('usr_anonymous') as {
+    const row = getDb()
+      .prepare('SELECT workspace_id, role, disabled_at FROM users WHERE id = ?')
+      .get('usr_anonymous') as {
       workspace_id: string
       role: string
       disabled_at: string | null
@@ -163,9 +183,9 @@ describe('anonymous homepage links', () => {
     })
     expect(link.slug).toMatch(/^[a-z0-9]{8}$/)
     expect(link.state).toBe('active')
-    expect(
-      getDb().prepare('SELECT created_by FROM short_links WHERE id = ?').get(link.id),
-    ).toEqual({ created_by: 'usr_anonymous' })
+    expect(getDb().prepare('SELECT created_by FROM short_links WHERE id = ?').get(link.id)).toEqual(
+      { created_by: 'usr_anonymous' },
+    )
   })
 })
 
@@ -226,7 +246,9 @@ describe('updateLink', () => {
       hostname: 'other.test',
     })
     const link = insertLink(fixture, { slug: 'launch' })
-    expect(() => getLinkDetail({ workspaceId: other.workspaceId, linkId: link, role: 'owner' })).toThrow(NotFoundError)
+    expect(() =>
+      getLinkDetail({ workspaceId: other.workspaceId, linkId: link, role: 'owner' }),
+    ).toThrow(NotFoundError)
   })
 })
 
@@ -248,7 +270,9 @@ describe('archive authorization', () => {
       hostname: 'member.test',
     })
     const memberLink = insertLink(member, { slug: 'member-link' })
-    expect(() => setArchived({ user: member.user, linkId: memberLink, archived: true })).toThrow(AuthorizationError)
+    expect(() => setArchived({ user: member.user, linkId: memberLink, archived: true })).toThrow(
+      AuthorizationError,
+    )
   })
 })
 
@@ -260,18 +284,26 @@ describe('listLinks', () => {
     insertLink(fixture, { slug: 'expired-link', expiresAt: '2020-01-01T00:00:00.000Z' })
     insertLink(fixture, { slug: 'archived-link', archivedAt: '2026-01-01T00:00:00.000Z' })
 
-    expect(listLinks({ workspaceId: fixture.workspaceId, state: 'active' }).links.map((link) => link.slug)).toEqual([
-      'active-link',
-    ])
-    expect(listLinks({ workspaceId: fixture.workspaceId, state: 'disabled' }).links.map((link) => link.slug)).toEqual([
-      'paused-link',
-    ])
-    expect(listLinks({ workspaceId: fixture.workspaceId, state: 'expired' }).links.map((link) => link.slug)).toEqual([
-      'expired-link',
-    ])
-    expect(listLinks({ workspaceId: fixture.workspaceId, state: 'archived' }).links.map((link) => link.slug)).toEqual([
-      'archived-link',
-    ])
+    expect(
+      listLinks({ workspaceId: fixture.workspaceId, state: 'active' }).links.map(
+        (link) => link.slug,
+      ),
+    ).toEqual(['active-link'])
+    expect(
+      listLinks({ workspaceId: fixture.workspaceId, state: 'disabled' }).links.map(
+        (link) => link.slug,
+      ),
+    ).toEqual(['paused-link'])
+    expect(
+      listLinks({ workspaceId: fixture.workspaceId, state: 'expired' }).links.map(
+        (link) => link.slug,
+      ),
+    ).toEqual(['expired-link'])
+    expect(
+      listLinks({ workspaceId: fixture.workspaceId, state: 'archived' }).links.map(
+        (link) => link.slug,
+      ),
+    ).toEqual(['archived-link'])
     expect(listLinks({ workspaceId: fixture.workspaceId, state: 'all' }).total).toBe(1)
     expect(listLinks({ workspaceId: fixture.workspaceId, search: 'active-link' }).total).toBe(1)
     expect(listLinks({ workspaceId: fixture.workspaceId, page: 2 }).total).toBe(1)

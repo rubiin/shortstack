@@ -1,5 +1,3 @@
-import { useEffect } from 'react'
-import type { ReactNode } from 'react'
 import {
   HeadContent,
   Link,
@@ -9,6 +7,9 @@ import {
   useRouter,
 } from '@tanstack/react-router'
 import type { ErrorComponentProps } from '@tanstack/react-router'
+import { useEffect } from 'react'
+import type { ReactNode } from 'react'
+
 import '../styles.css'
 
 const themeScript = `(() => {
@@ -51,8 +52,7 @@ export const Route = createRootRoute({
     links: [
       {
         rel: 'icon',
-        href:
-          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f4f1e9'/%3E%3Crect x='7' y='14' width='4.5' height='10' rx='1.5' fill='%23205a45'/%3E%3Crect x='13.75' y='7' width='4.5' height='17' rx='1.5' fill='%23205a45'/%3E%3Crect x='20.5' y='17' width='4.5' height='7' rx='1.5' fill='%23b94724'/%3E%3C/svg%3E",
+        href: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f4f1e9'/%3E%3Crect x='7' y='14' width='4.5' height='10' rx='1.5' fill='%23205a45'/%3E%3Crect x='13.75' y='7' width='4.5' height='17' rx='1.5' fill='%23205a45'/%3E%3Crect x='20.5' y='17' width='4.5' height='7' rx='1.5' fill='%23b94724'/%3E%3C/svg%3E",
       },
     ],
   }),

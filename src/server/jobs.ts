@@ -94,7 +94,9 @@ export function enqueueJob(input: EnqueueJobInput): Job {
     timestamp,
     timestamp,
   )
-  const row = db.prepare('SELECT * FROM jobs WHERE idempotency_key = ?').get(input.idempotencyKey) as JobRow
+  const row = db
+    .prepare('SELECT * FROM jobs WHERE idempotency_key = ?')
+    .get(input.idempotencyKey) as JobRow
   return mapJob(row)
 }
 
@@ -124,11 +126,15 @@ export function completeJob(jobId: string, workerId: string): void {
   ).run(timestamp, timestamp, jobId, workerId)
 }
 
-export function failJob(jobId: string, workerId: string, error: string): { retrying: boolean; attempts: number } {
+export function failJob(
+  jobId: string,
+  workerId: string,
+  error: string,
+): { retrying: boolean; attempts: number } {
   const db = getDb()
-  const row = db.prepare('SELECT attempts, max_attempts FROM jobs WHERE id = ? AND locked_by = ?').get(jobId, workerId) as
-    | { attempts: number; max_attempts: number }
-    | undefined
+  const row = db
+    .prepare('SELECT attempts, max_attempts FROM jobs WHERE id = ? AND locked_by = ?')
+    .get(jobId, workerId) as { attempts: number; max_attempts: number } | undefined
   if (!row) return { retrying: false, attempts: 0 }
   const timestamp = nowIso()
   const retrying = row.attempts < row.max_attempts
@@ -182,8 +188,16 @@ export function ensureDailyMaintenanceJob(now = new Date()): Job {
 
 export function getJobCounts(): Record<JobStatus, number> {
   const db = getDb()
-  const counts: Record<JobStatus, number> = { queued: 0, running: 0, succeeded: 0, failed: 0, cancelled: 0 }
-  for (const row of db.prepare('SELECT status, count(*) AS n FROM jobs GROUP BY status').all() as Array<{
+  const counts: Record<JobStatus, number> = {
+    queued: 0,
+    running: 0,
+    succeeded: 0,
+    failed: 0,
+    cancelled: 0,
+  }
+  for (const row of db
+    .prepare('SELECT status, count(*) AS n FROM jobs GROUP BY status')
+    .all() as Array<{
     status: JobStatus
     n: number
   }>) {

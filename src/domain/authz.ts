@@ -16,7 +16,10 @@ export function canRestoreLinks(user: Pick<AuthUser, 'role'>): boolean {
   return user.role === 'owner'
 }
 
-export function belongsToWorkspace(user: Pick<AuthUser, 'workspaceId'>, resourceWorkspaceId: string): boolean {
+export function belongsToWorkspace(
+  user: Pick<AuthUser, 'workspaceId'>,
+  resourceWorkspaceId: string,
+): boolean {
   return user.workspaceId === resourceWorkspaceId
 }
 

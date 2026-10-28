@@ -1,14 +1,20 @@
+import { NotFoundError } from '~/domain/authz'
+import { toCsv } from '~/domain/csv'
+import { countryName, deviceLabel, percentage } from '~/domain/privacy'
+import { enumerateDays, resolveDateRange } from '~/domain/time'
+import type {
+  AnalyticsData,
+  BreakdownItem,
+  CampaignOption,
+  ExportSummary,
+  TrendPoint,
+} from '~/domain/types'
+
+import { getStorage } from './adapters/storage'
 import { getDb } from './db'
-import { getConfig } from './config'
 import { newId, nowIso } from './ids'
 import { enqueueJob } from './jobs'
 import { logger } from './log'
-import { getStorage } from './adapters/storage'
-import { countryName, deviceLabel, percentage } from '~/domain/privacy'
-import { enumerateDays, resolveDateRange } from '~/domain/time'
-import { toCsv } from '~/domain/csv'
-import type { AnalyticsData, BreakdownItem, CampaignOption, ExportSummary, TrendPoint } from '~/domain/types'
-import { NotFoundError } from '~/domain/authz'
 
 type AnalyticsQuery = {
   workspaceId: string
@@ -87,7 +93,12 @@ export function analyticsFor(input: {
     campaignName = campaign.name
   }
 
-  const current: AnalyticsQuery = { workspaceId: input.workspaceId, from: range.from, to: range.to, campaignId }
+  const current: AnalyticsQuery = {
+    workspaceId: input.workspaceId,
+    from: range.from,
+    to: range.to,
+    campaignId,
+  }
   const previous: AnalyticsQuery = {
     workspaceId: input.workspaceId,
     from: range.previousFrom,
@@ -120,7 +131,7 @@ export function analyticsFor(input: {
     return {
       day,
       current: currentByDay.get(day) ?? 0,
-      previous: previousDay ? previousByDay.get(previousDay) ?? 0 : 0,
+      previous: previousDay ? (previousByDay.get(previousDay) ?? 0) : 0,
     }
   })
 
@@ -153,7 +164,12 @@ export function analyticsFor(input: {
          WHERE ${currentWhere.where}
          GROUP BY l.id ORDER BY clicks DESC LIMIT 5`,
       )
-      .all(currentWhere.params) as Array<{ id: string; slug: string; campaign_name: string | null; clicks: number }>
+      .all(currentWhere.params) as Array<{
+      id: string
+      slug: string
+      campaign_name: string | null
+      clicks: number
+    }>
   ).map((row) => ({
     id: row.id,
     slug: row.slug,
@@ -164,15 +180,15 @@ export function analyticsFor(input: {
   const mobile = devices.find((item) => item.key === 'mobile')?.clicks ?? 0
   const exportList = listExports(input.workspaceId)
   const campaignsAvailable = db
-    .prepare("SELECT id, name FROM campaigns WHERE workspace_id = ? AND status = 'active' ORDER BY name COLLATE NOCASE")
+    .prepare(
+      "SELECT id, name FROM campaigns WHERE workspace_id = ? AND status = 'active' ORDER BY name COLLATE NOCASE",
+    )
     .all(input.workspaceId) as CampaignOption[]
 
   const hasAnyClicks =
-    (
-      db
-        .prepare('SELECT 1 FROM click_events WHERE workspace_id = ? LIMIT 1')
-        .get(input.workspaceId) as { 1: number } | undefined
-    ) !== undefined
+    (db
+      .prepare('SELECT 1 FROM click_events WHERE workspace_id = ? LIMIT 1')
+      .get(input.workspaceId) as { 1: number } | undefined) !== undefined
 
   return {
     filters: {
@@ -186,7 +202,11 @@ export function analyticsFor(input: {
     totalClicks,
     previousClicks,
     deltaPercent:
-      previousClicks === 0 ? (totalClicks === 0 ? 0 : null) : Math.round(((totalClicks - previousClicks) / previousClicks) * 100),
+      previousClicks === 0
+        ? totalClicks === 0
+          ? 0
+          : null
+        : Math.round(((totalClicks - previousClicks) / previousClicks) * 100),
     topReferrer: referrers[0] ?? null,
     topCountry: countries[0] ?? null,
     mobileShare: percentage(mobile, totalClicks),
@@ -260,14 +280,20 @@ export function listExports(workspaceId: string): ExportSummary[] {
     createdAt: row.created_at,
     expiresAt: row.expires_at,
     downloadUrl:
-      row.status === 'ready' && row.file_key && row.expires_at && Date.parse(row.expires_at) > Date.now()
+      row.status === 'ready' &&
+      row.file_key &&
+      row.expires_at &&
+      Date.parse(row.expires_at) > Date.now()
         ? storage.signedUrl(row.file_key, 300)
         : null,
     requestedByName: row.requested_by_name,
   }))
 }
 
-export function getExportStatus(input: { workspaceId: string; exportId: string }): ExportSummary | null {
+export function getExportStatus(input: {
+  workspaceId: string
+  exportId: string
+}): ExportSummary | null {
   const storage = getStorage()
   const row = getDb()
     .prepare(
@@ -299,7 +325,10 @@ export function getExportStatus(input: { workspaceId: string; exportId: string }
     createdAt: row.created_at,
     expiresAt: row.expires_at,
     downloadUrl:
-      row.status === 'ready' && row.file_key && row.expires_at && Date.parse(row.expires_at) > Date.now()
+      row.status === 'ready' &&
+      row.file_key &&
+      row.expires_at &&
+      Date.parse(row.expires_at) > Date.now()
         ? storage.signedUrl(row.file_key, 300)
         : null,
     requestedByName: row.requested_by_name,
@@ -317,7 +346,9 @@ export function exportFiltersFor(exportId: string): {
   }
 } {
   const row = getDb()
-    .prepare('SELECT id, workspace_id, status, filters_json, file_key, expires_at FROM exports WHERE id = ?')
+    .prepare(
+      'SELECT id, workspace_id, status, filters_json, file_key, expires_at FROM exports WHERE id = ?',
+    )
     .get(exportId) as
     | {
         id: string
@@ -341,10 +372,16 @@ export function exportFiltersFor(exportId: string): {
   }
 }
 
-export async function produceExportFile(exportId: string): Promise<{ rows: number; key: string; fileName: string }> {
+export async function produceExportFile(
+  exportId: string,
+): Promise<{ rows: number; key: string; fileName: string }> {
   const db = getDb()
   const info = exportFiltersFor(exportId).export
-  const filters = JSON.parse(info.filtersJson) as { from: string; to: string; campaignId: string | null }
+  const filters = JSON.parse(info.filtersJson) as {
+    from: string
+    to: string
+    campaignId: string | null
+  }
   const where = filterClause({
     workspaceId: info.workspaceId,
     from: filters.from,
@@ -375,7 +412,16 @@ export async function produceExportFile(exportId: string): Promise<{ rows: numbe
     clicks: number
   }>
   const csv = toCsv(
-    ['link_slug', 'domain', 'campaign', 'day', 'country_code', 'referrer_domain', 'device_class', 'clicks'],
+    [
+      'link_slug',
+      'domain',
+      'campaign',
+      'day',
+      'country_code',
+      'referrer_domain',
+      'device_class',
+      'clicks',
+    ],
     rows.map((row) => [
       row.slug,
       row.domain_hostname,
@@ -387,7 +433,6 @@ export async function produceExportFile(exportId: string): Promise<{ rows: numbe
       row.clicks,
     ]),
   )
-  const config = getConfig()
   const key = `exports/${info.workspaceId}/${info.id}.csv`
   const fileName = `shortstack-analytics_${filters.from}_to_${filters.to}.csv`
   await getStorage().put(key, new TextEncoder().encode(csv), 'text/csv; charset=utf-8')

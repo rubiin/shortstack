@@ -1,4 +1,8 @@
 import { setTimeout as sleep } from 'node:timers/promises'
+
+import { getCachePurgeAdapter } from './adapters/cloudflare'
+import { getStorage } from './adapters/storage'
+import { produceExportFile } from './analytics'
 import { getConfig } from './config'
 import { getDb } from './db'
 import { nowIso } from './ids'
@@ -11,19 +15,27 @@ import {
   type Job,
 } from './jobs'
 import { errorDetails, logger, runWithCorrelationId } from './log'
-import { getCachePurgeAdapter } from './adapters/cloudflare'
-import { getStorage } from './adapters/storage'
-import { produceExportFile } from './analytics'
 
 const workerId = `${getConfig().WORKER_ID}-${process.pid}`
 
-async function updateExportFailure(exportId: string, message: string, final: boolean): Promise<void> {
+async function updateExportFailure(
+  exportId: string,
+  message: string,
+  final: boolean,
+): Promise<void> {
   const db = getDb()
   const timestamp = nowIso()
   db.prepare(
     `UPDATE exports SET last_error = ?, status = ?, attempts = attempts + 1, updated_at = ?, finished_at = CASE WHEN ? = 1 THEN ? ELSE NULL END
      WHERE id = ?`,
-  ).run(message.slice(0, 2_000), final ? 'failed' : 'queued', timestamp, final ? 1 : 0, timestamp, exportId)
+  ).run(
+    message.slice(0, 2_000),
+    final ? 'failed' : 'queued',
+    timestamp,
+    final ? 1 : 0,
+    timestamp,
+    exportId,
+  )
 }
 
 async function processJob(job: Job): Promise<void> {
@@ -38,12 +50,15 @@ async function processJob(job: Job): Promise<void> {
     const exportId = String(job.payload.exportId ?? '')
     if (!exportId) throw new Error('Export job is missing exportId')
     const db = getDb()
-    const row = db.prepare('SELECT status, workspace_id FROM exports WHERE id = ?').get(exportId) as
-      | { status: string; workspace_id: string }
-      | undefined
+    const row = db
+      .prepare('SELECT status, workspace_id FROM exports WHERE id = ?')
+      .get(exportId) as { status: string; workspace_id: string } | undefined
     if (!row) throw new Error(`Export ${exportId} no longer exists`)
     if (row.status === 'ready') return
-    db.prepare("UPDATE exports SET status = 'running', updated_at = ? WHERE id = ?").run(nowIso(), exportId)
+    db.prepare("UPDATE exports SET status = 'running', updated_at = ? WHERE id = ?").run(
+      nowIso(),
+      exportId,
+    )
     const file = await produceExportFile(exportId)
     const config = getConfig()
     const timestamp = nowIso()
@@ -62,13 +77,17 @@ async function processJob(job: Job): Promise<void> {
     const timestamp = nowIso()
 
     db.prepare('DELETE FROM sessions WHERE expires_at <= ?').run(timestamp)
-    db.prepare('DELETE FROM rate_limits WHERE window_start < ?').run(Date.now() - 24 * 60 * 60 * 1000)
+    db.prepare('DELETE FROM rate_limits WHERE window_start < ?').run(
+      Date.now() - 24 * 60 * 60 * 1000,
+    )
 
     const clickCutoff = new Date()
     clickCutoff.setUTCMonth(clickCutoff.getUTCMonth() - config.CLICK_RETENTION_MONTHS)
     db.prepare('DELETE FROM click_events WHERE day < ?').run(clickCutoff.toISOString().slice(0, 10))
 
-    const rawCutoff = new Date(Date.now() - config.RAW_IMPORT_RETENTION_DAYS * 86_400_000).toISOString()
+    const rawCutoff = new Date(
+      Date.now() - config.RAW_IMPORT_RETENTION_DAYS * 86_400_000,
+    ).toISOString()
     // Clear raw CSV text (and raw row payloads) after the retention window while
     // preserving normalized import rows and the links they created.
     const oldBatches = db
@@ -81,13 +100,17 @@ async function processJob(job: Job): Promise<void> {
     for (const batch of oldBatches) {
       const clear = db.transaction(() => {
         db.prepare("UPDATE import_rows SET raw_json = '{}' WHERE batch_id = ?").run(batch.id)
-        db.prepare('UPDATE import_batches SET raw_csv = NULL, mapping_json = NULL WHERE id = ?').run(batch.id)
+        db.prepare(
+          'UPDATE import_batches SET raw_csv = NULL, mapping_json = NULL WHERE id = ?',
+        ).run(batch.id)
       })
       clear()
     }
 
     const staleExports = db
-      .prepare("SELECT id, file_key FROM exports WHERE status = 'ready' AND expires_at IS NOT NULL AND expires_at <= ?")
+      .prepare(
+        "SELECT id, file_key FROM exports WHERE status = 'ready' AND expires_at IS NOT NULL AND expires_at <= ?",
+      )
       .all(timestamp) as Array<{ id: string; file_key: string | null }>
     const storage = getStorage()
     for (const item of staleExports) {
@@ -95,14 +118,16 @@ async function processJob(job: Job): Promise<void> {
         try {
           await storage.delete(item.file_key)
         } catch (error) {
-          logger.warn('could not remove expired export file', { exportId: item.id, ...errorDetails(error) })
+          logger.warn('could not remove expired export file', {
+            exportId: item.id,
+            ...errorDetails(error),
+          })
           continue
         }
       }
-      db.prepare("UPDATE exports SET status = 'expired', file_key = NULL, updated_at = ? WHERE id = ?").run(
-        timestamp,
-        item.id,
-      )
+      db.prepare(
+        "UPDATE exports SET status = 'expired', file_key = NULL, updated_at = ? WHERE id = ?",
+      ).run(timestamp, item.id)
     }
     logger.info('maintenance complete', {
       clearedImportBatches: oldBatches.length,
@@ -135,7 +160,9 @@ async function tick(): Promise<boolean> {
   return true
 }
 
-export async function runWorker(options: { once?: boolean; signal?: AbortSignal } = {}): Promise<void> {
+export async function runWorker(
+  options: { once?: boolean; signal?: AbortSignal } = {},
+): Promise<void> {
   recoverStaleJobs()
   ensureDailyMaintenanceJob()
   if (options.once) {
@@ -152,7 +179,10 @@ export async function runWorker(options: { once?: boolean; signal?: AbortSignal 
   options.signal?.addEventListener('abort', stop, { once: true })
   while (!stopped) {
     const didWork = await tick()
-    if (!didWork) await sleep(getConfig().WORKER_POLL_MS, undefined, { signal: options.signal }).catch(() => undefined)
+    if (!didWork)
+      await sleep(getConfig().WORKER_POLL_MS, undefined, { signal: options.signal }).catch(
+        () => undefined,
+      )
     ensureDailyMaintenanceJob()
   }
   logger.info('worker stopped', { workerId })

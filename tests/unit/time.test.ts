@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import {
   effectiveLinkState,
   enumerateDays,
@@ -15,13 +16,23 @@ const now = new Date('2026-10-26T12:00:00.000Z')
 describe('effectiveLinkState', () => {
   it('prefers archived over every other state', () => {
     expect(
-      effectiveLinkState({ enabled: false, expiresAt: '2020-01-01T00:00:00.000Z', archivedAt: '2026-01-01T00:00:00.000Z' }, now),
+      effectiveLinkState(
+        {
+          enabled: false,
+          expiresAt: '2020-01-01T00:00:00.000Z',
+          archivedAt: '2026-01-01T00:00:00.000Z',
+        },
+        now,
+      ),
     ).toBe('archived')
   })
 
   it('reports disabled before expired', () => {
     expect(
-      effectiveLinkState({ enabled: false, expiresAt: '2020-01-01T00:00:00.000Z', archivedAt: null }, now),
+      effectiveLinkState(
+        { enabled: false, expiresAt: '2020-01-01T00:00:00.000Z', archivedAt: null },
+        now,
+      ),
     ).toBe('disabled')
   })
 
@@ -35,19 +46,33 @@ describe('effectiveLinkState', () => {
   })
 
   it('redirects only active links', () => {
-    expect(isRedirectable({ enabled: true, expiresAt: '2026-10-26T12:00:01.000Z', archivedAt: null }, now)).toBe(true)
+    expect(
+      isRedirectable(
+        { enabled: true, expiresAt: '2026-10-26T12:00:01.000Z', archivedAt: null },
+        now,
+      ),
+    ).toBe(true)
     expect(isRedirectable({ enabled: false, expiresAt: null, archivedAt: null }, now)).toBe(false)
   })
 
   it('warns only for enabled active links inside the warning window', () => {
     expect(
-      expiryWarning({ enabled: true, expiresAt: '2026-10-30T12:00:00.000Z', archivedAt: null }, now),
+      expiryWarning(
+        { enabled: true, expiresAt: '2026-10-30T12:00:00.000Z', archivedAt: null },
+        now,
+      ),
     ).toBe(true)
     expect(
-      expiryWarning({ enabled: true, expiresAt: '2026-11-10T12:00:00.000Z', archivedAt: null }, now),
+      expiryWarning(
+        { enabled: true, expiresAt: '2026-11-10T12:00:00.000Z', archivedAt: null },
+        now,
+      ),
     ).toBe(false)
     expect(
-      expiryWarning({ enabled: false, expiresAt: '2026-10-30T12:00:00.000Z', archivedAt: null }, now),
+      expiryWarning(
+        { enabled: false, expiresAt: '2026-10-30T12:00:00.000Z', archivedAt: null },
+        now,
+      ),
     ).toBe(false)
   })
 })

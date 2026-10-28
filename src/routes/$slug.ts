@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+
 import { redirectResponse, resolveRedirect, unavailableResponse } from '~/server/redirects'
 
 export const Route = createFileRoute('/$slug')({

@@ -1,8 +1,9 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router'
-import { getEditorDataFn } from '~/server/functions/links'
+
 import { LinkEditor } from '~/components/link-editor'
 import { CopyButton } from '~/components/ui'
 import { formatUtc } from '~/domain/time'
+import { getEditorDataFn } from '~/server/functions/links'
 
 export const Route = createFileRoute('/app/links/$linkId/edit')({
   loader: async ({ params }) => {
@@ -42,12 +43,7 @@ function EditLinkPage() {
       </div>
 
       <div className="split">
-        <LinkEditor
-          mode="edit"
-          domains={data.domains}
-          campaigns={data.campaigns}
-          link={link}
-        />
+        <LinkEditor mode="edit" domains={data.domains} campaigns={data.campaigns} link={link} />
         <aside className="stack">
           <div className="card card-pad stack-sm">
             <h2 className="section-title" style={{ fontSize: 21 }}>

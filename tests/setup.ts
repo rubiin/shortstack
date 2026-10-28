@@ -1,6 +1,7 @@
 import { mkdirSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
 import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
 import { beforeEach } from 'vitest'
 
 // Isolate every test file from the developer database and local storage. Keep

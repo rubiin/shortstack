@@ -19,9 +19,7 @@ export const RESERVED_SLUGS = new Set([
 export const SLUG_MIN_LENGTH = 3
 export const SLUG_MAX_LENGTH = 64
 
-export type SlugResult =
-  | { ok: true; slug: string }
-  | { ok: false; error: string }
+export type SlugResult = { ok: true; slug: string } | { ok: false; error: string }
 
 export function normalizeSlug(input: string): SlugResult {
   let value: string
@@ -30,7 +28,11 @@ export function normalizeSlug(input: string): SlugResult {
   } catch {
     return { ok: false, error: 'Slug contains unsupported characters.' }
   }
-  value = value.trim().toLowerCase().replace(/[\s_]+/g, '-').replace(/-+/g, '-')
+  value = value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-')
   if (!value) return { ok: false, error: 'Choose a slug.' }
   if (value.length < SLUG_MIN_LENGTH) {
     return { ok: false, error: `Slugs need at least ${SLUG_MIN_LENGTH} characters.` }
@@ -52,7 +54,9 @@ export function normalizeSlug(input: string): SlugResult {
 
 const alphabet = 'abcdefghjkmnpqrstuvwxyz23456789'
 
-export function generateSlug(random: (size: number) => Uint8Array = (size) => crypto.getRandomValues(new Uint8Array(size))): string {
+export function generateSlug(
+  random: (size: number) => Uint8Array = (size) => crypto.getRandomValues(new Uint8Array(size)),
+): string {
   const bytes = random(8)
   let result = ''
   for (let index = 0; index < 8; index += 1) {

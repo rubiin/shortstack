@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, join, posix } from 'node:path'
+
 import { getConfig } from '../config'
 
 export type StoredFile = {
@@ -122,7 +123,11 @@ export class LocalObjectStorage implements ObjectStorage {
     const expected = createHmac('sha256', this.secret).update(payload).digest('base64url')
     const expectedBuffer = Buffer.from(expected)
     const actualBuffer = Buffer.from(signature)
-    if (expectedBuffer.length !== actualBuffer.length || !timingSafeEqual(expectedBuffer, actualBuffer)) return null
+    if (
+      expectedBuffer.length !== actualBuffer.length ||
+      !timingSafeEqual(expectedBuffer, actualBuffer)
+    )
+      return null
     return { key, expiresAt }
   }
 
@@ -136,7 +141,11 @@ let storage: ObjectStorage | null = null
 export function getStorage(): ObjectStorage {
   if (!storage) {
     const config = getConfig()
-    storage = new LocalObjectStorage(config.FILE_STORAGE_DIR, config.FILE_SIGNING_SECRET, config.APP_ORIGIN)
+    storage = new LocalObjectStorage(
+      config.FILE_STORAGE_DIR,
+      config.FILE_SIGNING_SECRET,
+      config.APP_ORIGIN,
+    )
   }
   return storage
 }

@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react'
-import type { FormEvent } from 'react'
 import { Link, useRouter } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
-import { checkSlugFn, createLinkFn, updateLinkFn } from '~/server/functions/links'
+import { useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
+
 import { normalizeSlug } from '~/domain/slug'
 import { toDateTimeLocal } from '~/domain/time'
 import type { CampaignOption, DomainOption, LinkDetail } from '~/domain/types'
+import { checkSlugFn, createLinkFn, updateLinkFn } from '~/server/functions/links'
+
 import { Field, InlineAlert, StatePill, SubmitButton } from './ui'
 
 type EditorMode = 'create' | 'edit'
@@ -52,7 +54,10 @@ export function LinkEditor({
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [slugState, setSlugState] = useState<
-    { kind: 'idle' } | { kind: 'checking' } | { kind: 'available' } | { kind: 'unavailable'; message: string }
+    | { kind: 'idle' }
+    | { kind: 'checking' }
+    | { kind: 'available' }
+    | { kind: 'unavailable'; message: string }
   >({ kind: 'idle' })
 
   const selectedDomain = domains.find((domain) => domain.id === values.domainId) ?? defaultDomain
@@ -139,7 +144,8 @@ export function LinkEditor({
   }
 
   const archived = link?.state === 'archived'
-  const slugInvalid = Boolean(fields.slug) || (slugState.kind === 'unavailable' && !values.generateSlug)
+  const slugInvalid =
+    Boolean(fields.slug) || (slugState.kind === 'unavailable' && !values.generateSlug)
 
   return (
     <form className="form" onSubmit={(event) => void submit(event)} noValidate>
@@ -258,7 +264,12 @@ export function LinkEditor({
           </Field>
 
           <div className="grid-2">
-            <Field label="Campaign" htmlFor="campaignId" error={fields.campaignId} hint="Optional grouping.">
+            <Field
+              label="Campaign"
+              htmlFor="campaignId"
+              error={fields.campaignId}
+              hint="Optional grouping."
+            >
               <select
                 id="campaignId"
                 className="select"
@@ -345,14 +356,23 @@ export function LinkEditor({
         <p className="eyebrow" style={{ marginBottom: 8 }}>
           Live preview
         </p>
-        <p className="mono" style={{ fontSize: 15, overflowWrap: 'anywhere', color: 'var(--green-deep)' }}>
+        <p
+          className="mono"
+          style={{ fontSize: 15, overflowWrap: 'anywhere', color: 'var(--green-deep)' }}
+        >
           {previewUrl || 'Choose a domain to preview the short URL.'}
         </p>
         <div className="inline" style={{ marginTop: 12 }}>
-          {link ? <StatePill state={link.state} /> : <span className="pill pill--draft">Draft</span>}
+          {link ? (
+            <StatePill state={link.state} />
+          ) : (
+            <span className="pill pill--draft">Draft</span>
+          )}
           <span className="small muted">
             {values.enabled ? 'Redirects when saved' : 'Saved as paused'}
-            {values.expiresAt ? ` · expires ${values.expiresAt.replace('T', ' ')} UTC` : ' · no expiry'}
+            {values.expiresAt
+              ? ` · expires ${values.expiresAt.replace('T', ' ')} UTC`
+              : ' · no expiry'}
           </span>
         </div>
       </div>

@@ -2,7 +2,14 @@ import { normalizeDestination } from './destination'
 import { normalizeSlug } from './slug'
 import { parseDateTimeLocalUtc } from './time'
 
-export const IMPORT_FIELDS = ['slug', 'destination_url', 'campaign', 'note', 'expires_at', 'enabled'] as const
+export const IMPORT_FIELDS = [
+  'slug',
+  'destination_url',
+  'campaign',
+  'note',
+  'expires_at',
+  'enabled',
+] as const
 export type ImportField = (typeof IMPORT_FIELDS)[number]
 export type ImportMapping = Partial<Record<ImportField, string | null>>
 
@@ -17,7 +24,14 @@ export const IMPORT_FIELD_LABELS: Record<ImportField, string> = {
 
 const aliases: Record<ImportField, string[]> = {
   slug: ['slug', 'short_slug', 'short slug', 'path', 'shortlink', 'short_link'],
-  destination_url: ['destination', 'destination_url', 'destination url', 'url', 'long_url', 'target'],
+  destination_url: [
+    'destination',
+    'destination_url',
+    'destination url',
+    'url',
+    'long_url',
+    'target',
+  ],
   campaign: ['campaign', 'campaign_name', 'tag', 'tags'],
   note: ['note', 'notes', 'description', 'memo'],
   expires_at: ['expires_at', 'expiry', 'expires', 'expiration', 'expire_at'],
@@ -36,11 +50,15 @@ export function autoMap(headers: string[]): ImportMapping {
   return mapping
 }
 
-export function validateMapping(mapping: ImportMapping, headers: string[]): Array<{ field: string; message: string }> {
+export function validateMapping(
+  mapping: ImportMapping,
+  headers: string[],
+): Array<{ field: string; message: string }> {
   const errors: Array<{ field: string; message: string }> = []
   for (const required of ['slug', 'destination_url'] as const) {
     const header = mapping[required]
-    if (!header) errors.push({ field: required, message: `Map a column to ${IMPORT_FIELD_LABELS[required]}.` })
+    if (!header)
+      errors.push({ field: required, message: `Map a column to ${IMPORT_FIELD_LABELS[required]}.` })
     else if (!headers.includes(header)) {
       errors.push({ field: required, message: `Mapped column "${header}" is not in the CSV.` })
     }
@@ -49,9 +67,11 @@ export function validateMapping(mapping: ImportMapping, headers: string[]): Arra
   for (const field of IMPORT_FIELDS) {
     const header = mapping[field]
     if (!header) continue
-    if (used.has(header)) errors.push({ field, message: `Column "${header}" is mapped more than once.` })
+    if (used.has(header))
+      errors.push({ field, message: `Column "${header}" is mapped more than once.` })
     used.add(header)
-    if (!headers.includes(header)) errors.push({ field, message: `Mapped column "${header}" is not in the CSV.` })
+    if (!headers.includes(header))
+      errors.push({ field, message: `Mapped column "${header}" is not in the CSV.` })
   }
   return errors
 }
@@ -89,7 +109,8 @@ function parseExpiry(value: string): { expiresAt: string | null; error?: string 
     return { expiresAt: parsed }
   }
   const parsed = new Date(trimmed)
-  if (Number.isNaN(parsed.getTime())) return { expiresAt: null, error: 'Expiry is not a valid date.' }
+  if (Number.isNaN(parsed.getTime()))
+    return { expiresAt: null, error: 'Expiry is not a valid date.' }
   return { expiresAt: parsed.toISOString() }
 }
 
@@ -99,11 +120,11 @@ export function normalizeImportRow(
   now = new Date(),
 ): NormalizedImportRow {
   const errors: Record<string, string> = {}
-  const slugRaw = mapping.slug ? raw[mapping.slug] ?? '' : ''
+  const slugRaw = mapping.slug ? (raw[mapping.slug] ?? '') : ''
   const slug = normalizeSlug(slugRaw)
   if (!slug.ok) errors.slug = slug.error
 
-  const destinationRaw = mapping.destination_url ? raw[mapping.destination_url] ?? '' : ''
+  const destinationRaw = mapping.destination_url ? (raw[mapping.destination_url] ?? '') : ''
   const destination = normalizeDestination(destinationRaw)
   if (!destination.ok) errors.destination_url = destination.error
 
@@ -112,14 +133,14 @@ export function normalizeImportRow(
   const noteRaw = mapping.note ? (raw[mapping.note] ?? '').trim() : ''
   if (noteRaw.length > 500) errors.note = 'Notes can be at most 500 characters.'
 
-  const expiryType = mapping.expires_at ? raw[mapping.expires_at] ?? '' : ''
+  const expiryType = mapping.expires_at ? (raw[mapping.expires_at] ?? '') : ''
   const expiry = parseExpiry(expiryType)
   if (expiry.error) errors.expires_at = expiry.error
   if (expiry.expiresAt && Date.parse(expiry.expiresAt) <= now.getTime()) {
     errors.expires_at = 'Expiry must be in the future.'
   }
 
-  const enabledRaw = mapping.enabled ? raw[mapping.enabled] ?? '' : ''
+  const enabledRaw = mapping.enabled ? (raw[mapping.enabled] ?? '') : ''
   const enabled = parseEnabled(enabledRaw)
   if (enabled.error) errors.enabled = enabled.error
 

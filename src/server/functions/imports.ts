@@ -1,8 +1,10 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getRequestIP, setResponseHeader } from '@tanstack/react-start/server'
 import { z } from 'zod'
+
+import type { ImportBatchView } from '~/domain/types'
+
 import { requireSessionUser } from '../auth'
-import { rateLimitOrThrow } from '../rate-limit'
 import {
   applySuggestedSlugs,
   commitImport,
@@ -12,25 +14,29 @@ import {
   setImportRowExcluded,
   updateImportRow,
 } from '../imports'
+import { rateLimitOrThrow } from '../rate-limit'
 import { actionError, ok, type ActionResult } from './result'
-import type { ImportBatchView } from '~/domain/types'
 
 const batchIdSchema = z.object({ batchId: z.string().min(3).max(100) })
 
-const mappingSchema = z.record(
-  z.string().max(40),
-  z.union([z.string().max(200), z.null()]),
-)
+const mappingSchema = z.record(z.string().max(40), z.union([z.string().max(200), z.null()]))
 
 export const createImportFn = createServerFn({ method: 'POST' })
   .validator((input: unknown) =>
-    z.object({ csv: z.string().min(1).max(1_000_000), filename: z.string().max(200).optional() }).parse(input),
+    z
+      .object({ csv: z.string().min(1).max(1_000_000), filename: z.string().max(200).optional() })
+      .parse(input),
   )
   .handler(async ({ data }): Promise<ActionResult<{ batchId: string }>> => {
     try {
       const user = requireSessionUser()
       rateLimitOrThrow('import-create-user', user.id, 12, 60 * 60 * 1000)
-      rateLimitOrThrow('import-create-ip', getRequestIP({ xForwardedFor: true }) ?? 'local', 30, 60 * 60 * 1000)
+      rateLimitOrThrow(
+        'import-create-ip',
+        getRequestIP({ xForwardedFor: true }) ?? 'local',
+        30,
+        60 * 60 * 1000,
+      )
       const batch = createImportBatch({ user, csv: data.csv, filename: data.filename })
       return ok(batch)
     } catch (error) {
@@ -48,7 +54,9 @@ export const getImportFn = createServerFn({ method: 'GET' })
 
 export const previewImportFn = createServerFn({ method: 'POST' })
   .validator((input: unknown) =>
-    batchIdSchema.extend({ mapping: mappingSchema, domainId: z.string().max(100).optional() }).parse(input),
+    batchIdSchema
+      .extend({ mapping: mappingSchema, domainId: z.string().max(100).optional() })
+      .parse(input),
   )
   .handler(async ({ data }): Promise<ActionResult<ImportBatchView>> => {
     try {
@@ -84,7 +92,12 @@ export const updateImportRowFn = createServerFn({ method: 'POST' })
   .handler(async ({ data }): Promise<ActionResult<ImportBatchView>> => {
     try {
       const user = requireSessionUser()
-      const batch = updateImportRow({ user, batchId: data.batchId, rowId: data.rowId, values: data.values })
+      const batch = updateImportRow({
+        user,
+        batchId: data.batchId,
+        rowId: data.rowId,
+        values: data.values,
+      })
       return ok(batch)
     } catch (error) {
       return actionError(error, 'updateImportRow')
@@ -126,13 +139,17 @@ export const commitImportFn = createServerFn({ method: 'POST' })
   .validator((input: unknown) =>
     batchIdSchema.extend({ commitToken: z.string().min(10).max(200) }).parse(input),
   )
-  .handler(async ({ data }): Promise<ActionResult<{ links: Array<{ id: string; slug: string; shortUrl: string }> }>> => {
-    try {
-      const user = requireSessionUser()
-      rateLimitOrThrow('import-commit-user', user.id, 20, 60 * 60 * 1000)
-      const result = commitImport({ user, batchId: data.batchId, commitToken: data.commitToken })
-      return ok({ links: result.links })
-    } catch (error) {
-      return actionError(error, 'commitImport')
-    }
-  })
+  .handler(
+    async ({
+      data,
+    }): Promise<ActionResult<{ links: Array<{ id: string; slug: string; shortUrl: string }> }>> => {
+      try {
+        const user = requireSessionUser()
+        rateLimitOrThrow('import-commit-user', user.id, 20, 60 * 60 * 1000)
+        const result = commitImport({ user, batchId: data.batchId, commitToken: data.commitToken })
+        return ok({ links: result.links })
+      } catch (error) {
+        return actionError(error, 'commitImport')
+      }
+    },
+  )

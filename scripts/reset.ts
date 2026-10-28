@@ -1,5 +1,6 @@
 import { existsSync, rmSync } from 'node:fs'
 import { resolve } from 'node:path'
+
 import { getConfig } from '../src/server/config'
 import { closeDb } from '../src/server/db'
 import { seedDemoData } from './seed'

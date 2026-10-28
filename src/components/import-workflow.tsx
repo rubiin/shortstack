@@ -1,15 +1,8 @@
-import { useEffect, useState } from 'react'
-import type { FormEvent } from 'react'
 import { Link, useRouter } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
-import {
-  applySuggestedSlugsFn,
-  commitImportFn,
-  createImportFn,
-  previewImportFn,
-  setImportRowExcludedFn,
-  updateImportRowFn,
-} from '~/server/functions/imports'
+import { useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
+
 import {
   IMPORT_FIELDS,
   IMPORT_FIELD_LABELS,
@@ -18,6 +11,15 @@ import {
 } from '~/domain/import'
 import { toDateTimeLocal } from '~/domain/time'
 import type { ImportBatchView, ImportRowView } from '~/domain/types'
+import {
+  applySuggestedSlugsFn,
+  commitImportFn,
+  createImportFn,
+  previewImportFn,
+  setImportRowExcludedFn,
+  updateImportRowFn,
+} from '~/server/functions/imports'
+
 import { Field, InlineAlert, StatusPill, SubmitButton } from './ui'
 
 export function ImportUpload() {
@@ -111,7 +113,11 @@ export function ImportUpload() {
           htmlFor="csv"
           error={fields.csv}
           hint="The first row must be headers. Slug and destination URL are required."
-          aside={<span>{csv ? `${csv.split(/\r?\n/).length - 1} lines pasted` : 'Nothing pasted yet'}</span>}
+          aside={
+            <span>
+              {csv ? `${csv.split(/\r?\n/).length - 1} lines pasted` : 'Nothing pasted yet'}
+            </span>
+          }
         >
           <textarea
             id="csv"
@@ -121,7 +127,9 @@ export function ImportUpload() {
               setCsv(event.target.value)
               setFilename(undefined)
             }}
-            placeholder={'slug,destination_url,campaign,note,expires_at,enabled\nspring-guide,https://example.com/spring,Spring Launch,Email CTA,2026-12-31,true'}
+            placeholder={
+              'slug,destination_url,campaign,note,expires_at,enabled\nspring-guide,https://example.com/spring,Spring Launch,Email CTA,2026-12-31,true'
+            }
             spellCheck={false}
             aria-invalid={fields.csv ? true : undefined}
           />
@@ -416,19 +424,12 @@ export function ImportBatchWork({ initial }: { initial: ImportBatchView }) {
             </div>
             <div className="inline">
               {!completed && duplicates > 0 ? (
-                <button
-                  type="button"
-                  className="btn btn--small"
-                  onClick={() => void applyAll()}
-                >
+                <button type="button" className="btn btn--small" onClick={() => void applyAll()}>
                   Apply {duplicates} suggested slug{duplicates === 1 ? '' : 's'}
                 </button>
               ) : null}
               {completed ? (
-                <a
-                  className="btn btn--small btn--primary"
-                  href={`/api/imports/${batch.id}/qr.zip`}
-                >
+                <a className="btn btn--small btn--primary" href={`/api/imports/${batch.id}/qr.zip`}>
                   Download QR codes
                 </a>
               ) : null}

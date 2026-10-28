@@ -1,12 +1,15 @@
-import { getDb } from './db'
-import { getConfig } from './config'
-import { newId, nowIso } from './ids'
-import { enqueueJob } from './jobs'
-import { logger } from './log'
-import { effectiveLinkState, enumerateDays, expiryWarning, type LinkState } from '~/domain/time'
+import {
+  AuthorizationError,
+  ConflictError,
+  NotFoundError,
+  ValidationError,
+  canArchiveLinks,
+} from '~/domain/authz'
+import type { AuthUser } from '~/domain/authz'
 import { normalizeDestination } from '~/domain/destination'
 import { generateSlug, normalizeSlug } from '~/domain/slug'
-import { AuthorizationError, ConflictError, NotFoundError, ValidationError, canArchiveLinks } from '~/domain/authz'
+import { effectiveLinkState, enumerateDays, expiryWarning, type LinkState } from '~/domain/time'
+import { parseDateTimeLocalUtc } from '~/domain/time'
 import type {
   AuditEntry,
   CampaignOption,
@@ -16,8 +19,12 @@ import type {
   LinkListItem,
   LinkListResult,
 } from '~/domain/types'
-import type { AuthUser } from '~/domain/authz'
-import { parseDateTimeLocalUtc } from '~/domain/time'
+
+import { getConfig } from './config'
+import { getDb } from './db'
+import { newId, nowIso } from './ids'
+import { enqueueJob } from './jobs'
+import { logger } from './log'
 
 type LinkRow = {
   id: string
@@ -83,7 +90,7 @@ const linkSelect = `
 function stateWhere(state: LinkState | 'all'): string {
   switch (state) {
     case 'active':
-      return "l.archived_at IS NULL AND l.enabled = 1 AND (l.expires_at IS NULL OR l.expires_at > @now)"
+      return 'l.archived_at IS NULL AND l.enabled = 1 AND (l.expires_at IS NULL OR l.expires_at > @now)'
     case 'disabled':
       return 'l.archived_at IS NULL AND l.enabled = 0'
     case 'expired':
@@ -91,20 +98,34 @@ function stateWhere(state: LinkState | 'all'): string {
     case 'archived':
       return 'l.archived_at IS NOT NULL'
     default:
-      return "l.archived_at IS NULL"
+      return 'l.archived_at IS NULL'
   }
 }
 
 export function listDomains(workspaceId: string): DomainOption[] {
   const rows = getDb()
-    .prepare('SELECT id, hostname, origin, is_default FROM domains WHERE workspace_id = ? AND status = ? ORDER BY is_default DESC, hostname ASC')
-    .all(workspaceId, 'active') as Array<{ id: string; hostname: string; origin: string; is_default: number }>
-  return rows.map((row) => ({ id: row.id, hostname: row.hostname, origin: row.origin, isDefault: row.is_default === 1 }))
+    .prepare(
+      'SELECT id, hostname, origin, is_default FROM domains WHERE workspace_id = ? AND status = ? ORDER BY is_default DESC, hostname ASC',
+    )
+    .all(workspaceId, 'active') as Array<{
+    id: string
+    hostname: string
+    origin: string
+    is_default: number
+  }>
+  return rows.map((row) => ({
+    id: row.id,
+    hostname: row.hostname,
+    origin: row.origin,
+    isDefault: row.is_default === 1,
+  }))
 }
 
 export function listCampaigns(workspaceId: string): CampaignOption[] {
   return getDb()
-    .prepare("SELECT id, name FROM campaigns WHERE workspace_id = ? AND status = 'active' ORDER BY name COLLATE NOCASE")
+    .prepare(
+      "SELECT id, name FROM campaigns WHERE workspace_id = ? AND status = 'active' ORDER BY name COLLATE NOCASE",
+    )
     .all(workspaceId) as CampaignOption[]
 }
 
@@ -127,9 +148,11 @@ export function listLinks(input: {
   const weekStartDay = weekStart.toISOString().slice(0, 10)
   const pageSize = 20
   const page = Math.max(1, Number(input.page) || 1)
-  const state = (['active', 'disabled', 'expired', 'archived'].includes(input.state ?? '')
-    ? input.state
-    : 'active') as LinkState | 'all'
+  const state = (
+    ['active', 'disabled', 'expired', 'archived'].includes(input.state ?? '')
+      ? input.state
+      : 'active'
+  ) as LinkState | 'all'
   const search = (input.search ?? '').trim().slice(0, 200)
   const campaignId = input.campaignId || null
 
@@ -150,9 +173,7 @@ export function listLinks(input: {
   const where = clauses.join(' AND ')
 
   const rows = db
-    .prepare(
-      `${linkSelect} WHERE ${where} ORDER BY l.updated_at DESC LIMIT @limit OFFSET @offset`,
-    )
+    .prepare(`${linkSelect} WHERE ${where} ORDER BY l.updated_at DESC LIMIT @limit OFFSET @offset`)
     .all({ ...params, limit: pageSize, offset: (page - 1) * pageSize }) as LinkRow[]
   const totalRow = db
     .prepare(`SELECT count(*) AS n FROM short_links l WHERE ${where}`)
@@ -160,11 +181,13 @@ export function listLinks(input: {
 
   const active = db
     .prepare(
-      "SELECT count(*) AS n FROM short_links WHERE workspace_id = ? AND archived_at IS NULL AND enabled = 1 AND (expires_at IS NULL OR expires_at > ?)",
+      'SELECT count(*) AS n FROM short_links WHERE workspace_id = ? AND archived_at IS NULL AND enabled = 1 AND (expires_at IS NULL OR expires_at > ?)',
     )
     .get(input.workspaceId, nowIsoValue) as { n: number }
   const archived = db
-    .prepare('SELECT count(*) AS n FROM short_links WHERE workspace_id = ? AND archived_at IS NOT NULL')
+    .prepare(
+      'SELECT count(*) AS n FROM short_links WHERE workspace_id = ? AND archived_at IS NOT NULL',
+    )
     .get(input.workspaceId) as { n: number }
   const clicks = db
     .prepare('SELECT count(*) AS n FROM click_events WHERE workspace_id = ? AND day >= ?')
@@ -175,7 +198,11 @@ export function listLinks(input: {
        WHERE workspace_id = ? AND archived_at IS NULL AND enabled = 1
        AND expires_at IS NOT NULL AND expires_at > ? AND expires_at <= ?`,
     )
-    .get(input.workspaceId, nowIsoValue, new Date(now.getTime() + 7 * 86_400_000).toISOString()) as { n: number }
+    .get(
+      input.workspaceId,
+      nowIsoValue,
+      new Date(now.getTime() + 7 * 86_400_000).toISOString(),
+    ) as { n: number }
 
   return {
     links: rows.map((row) => mapLink(row, now)),
@@ -193,7 +220,11 @@ export function listLinks(input: {
   }
 }
 
-export function getLinkDetail(input: { workspaceId: string; linkId: string; role: 'owner' | 'member' }): LinkDetail {
+export function getLinkDetail(input: {
+  workspaceId: string
+  linkId: string
+  role: 'owner' | 'member'
+}): LinkDetail {
   const db = getDb()
   const now = new Date()
   const weekStart = new Date(now)
@@ -239,7 +270,10 @@ export function getLinkDetail(input: { workspaceId: string; linkId: string; role
        WHERE link_id = ? AND day >= ?
        GROUP BY day ORDER BY day ASC`,
     )
-    .all(input.linkId, new Date(now.getTime() - 6 * 86_400_000).toISOString().slice(0, 10)) as Array<{
+    .all(
+      input.linkId,
+      new Date(now.getTime() - 6 * 86_400_000).toISOString().slice(0, 10),
+    ) as Array<{
     day: string
     clicks: number
   }>
@@ -293,7 +327,14 @@ export function anonymousAuthor(domainId: string): AuthUser {
     db.prepare(
       `INSERT OR IGNORE INTO users (id, workspace_id, email, name, role, password_hash, disabled_at, created_at)
        VALUES (?, ?, ?, ?, 'member', '', ?, ?)`,
-    ).run(ANONYMOUS_USER_ID, workspaceId, 'anonymous@shortstack.invalid', 'Anonymous', timestamp, timestamp)
+    ).run(
+      ANONYMOUS_USER_ID,
+      workspaceId,
+      'anonymous@shortstack.invalid',
+      'Anonymous',
+      timestamp,
+      timestamp,
+    )
   }
   return {
     id: ANONYMOUS_USER_ID,
@@ -319,28 +360,38 @@ export function createLink(input: {
   const db = getDb()
   const now = new Date()
   const destination = normalizeDestination(input.destinationUrl)
-  if (!destination.ok) throw new ValidationError(destination.error, { destinationUrl: destination.error })
+  if (!destination.ok)
+    throw new ValidationError(destination.error, { destinationUrl: destination.error })
 
   const note = (input.note ?? '').trim()
-  if (note.length > 500) throw new ValidationError('Notes can be at most 500 characters.', { note: 'Too long.' })
+  if (note.length > 500)
+    throw new ValidationError('Notes can be at most 500 characters.', { note: 'Too long.' })
   const expiry = input.expiresAtLocal ? parseDateTimeLocalUtc(input.expiresAtLocal) : null
   if (input.expiresAtLocal && !expiry) {
-    throw new ValidationError('Enter a valid expiry date.', { expiresAt: 'Enter a valid UTC date and time.' })
+    throw new ValidationError('Enter a valid expiry date.', {
+      expiresAt: 'Enter a valid UTC date and time.',
+    })
   }
   if (expiry && Date.parse(expiry) <= now.getTime()) {
-    throw new ValidationError('Expiry must be in the future.', { expiresAt: 'Choose a future date.' })
+    throw new ValidationError('Expiry must be in the future.', {
+      expiresAt: 'Choose a future date.',
+    })
   }
 
   const domain = db
     .prepare("SELECT id FROM domains WHERE id = ? AND workspace_id = ? AND status = 'active'")
     .get(input.domainId, input.user.workspaceId) as { id: string } | undefined
-  if (!domain) throw new ValidationError('Choose an active domain.', { domainId: 'Domain is unavailable.' })
+  if (!domain)
+    throw new ValidationError('Choose an active domain.', { domainId: 'Domain is unavailable.' })
 
   if (input.campaignId) {
     const campaign = db
       .prepare('SELECT id FROM campaigns WHERE id = ? AND workspace_id = ?')
       .get(input.campaignId, input.user.workspaceId) as { id: string } | undefined
-    if (!campaign) throw new ValidationError('Choose a campaign in this workspace.', { campaignId: 'Campaign unavailable.' })
+    if (!campaign)
+      throw new ValidationError('Choose a campaign in this workspace.', {
+        campaignId: 'Campaign unavailable.',
+      })
   }
 
   let normalizedSlug: string | null = null
@@ -406,7 +457,11 @@ export function createLink(input: {
       input.user.workspaceId,
       input.user.id,
       id,
-      JSON.stringify({ slug: finalSlug, destinationUrl: destination.url, campaignId: input.campaignId ?? null }),
+      JSON.stringify({
+        slug: finalSlug,
+        destinationUrl: destination.url,
+        campaignId: input.campaignId ?? null,
+      }),
       timestamp,
     )
     return finalSlug
@@ -424,7 +479,11 @@ export function createLink(input: {
     throw error
   }
 
-  const detail = getLinkDetail({ workspaceId: input.user.workspaceId, linkId: id, role: input.user.role })
+  const detail = getLinkDetail({
+    workspaceId: input.user.workspaceId,
+    linkId: id,
+    role: input.user.role,
+  })
   schedulePurge([detail.shortUrl], `${id}:${timestamp}`)
   logger.info('link created', {
     linkId: id,
@@ -467,34 +526,50 @@ export function updateLink(input: {
   if (!current) throw new NotFoundError('Link not found.')
   if (current.archived_at) throw new ValidationError('Restore this link before editing it.')
   if (input.expectedUpdatedAt && input.expectedUpdatedAt !== current.updated_at) {
-    throw new ConflictError('This link changed in another tab. Reload to review the latest version.')
+    throw new ConflictError(
+      'This link changed in another tab. Reload to review the latest version.',
+    )
   }
   const destination = normalizeDestination(input.destinationUrl)
-  if (!destination.ok) throw new ValidationError(destination.error, { destinationUrl: destination.error })
+  if (!destination.ok)
+    throw new ValidationError(destination.error, { destinationUrl: destination.error })
   const slug = normalizeSlug(input.slug)
   if (!slug.ok) throw new ValidationError(slug.error, { slug: slug.error })
   const note = (input.note ?? '').trim()
-  if (note.length > 500) throw new ValidationError('Notes can be at most 500 characters.', { note: 'Too long.' })
+  if (note.length > 500)
+    throw new ValidationError('Notes can be at most 500 characters.', { note: 'Too long.' })
   const expiry = input.expiresAtLocal ? parseDateTimeLocalUtc(input.expiresAtLocal) : null
   if (input.expiresAtLocal && !expiry) {
-    throw new ValidationError('Enter a valid expiry date.', { expiresAt: 'Enter a valid UTC date and time.' })
+    throw new ValidationError('Enter a valid expiry date.', {
+      expiresAt: 'Enter a valid UTC date and time.',
+    })
   }
   if (expiry && Date.parse(expiry) <= Date.now()) {
-    throw new ValidationError('Expiry must be in the future.', { expiresAt: 'Choose a future date.' })
+    throw new ValidationError('Expiry must be in the future.', {
+      expiresAt: 'Choose a future date.',
+    })
   }
   const domain = db
-    .prepare("SELECT id, origin FROM domains WHERE id = ? AND workspace_id = ? AND status = 'active'")
+    .prepare(
+      "SELECT id, origin FROM domains WHERE id = ? AND workspace_id = ? AND status = 'active'",
+    )
     .get(input.domainId, input.user.workspaceId) as { id: string; origin: string } | undefined
-  if (!domain) throw new ValidationError('Choose an active domain.', { domainId: 'Domain is unavailable.' })
+  if (!domain)
+    throw new ValidationError('Choose an active domain.', { domainId: 'Domain is unavailable.' })
   if (input.campaignId) {
     const campaign = db
       .prepare('SELECT id FROM campaigns WHERE id = ? AND workspace_id = ?')
       .get(input.campaignId, input.user.workspaceId) as { id: string } | undefined
-    if (!campaign) throw new ValidationError('Choose a campaign in this workspace.', { campaignId: 'Campaign unavailable.' })
+    if (!campaign)
+      throw new ValidationError('Choose a campaign in this workspace.', {
+        campaignId: 'Campaign unavailable.',
+      })
   }
 
   const timestamp = nowIso()
-  const oldOrigin = db.prepare('SELECT origin FROM domains WHERE id = ?').get(current.domain_id) as { origin: string }
+  const oldOrigin = db
+    .prepare('SELECT origin FROM domains WHERE id = ?')
+    .get(current.domain_id) as { origin: string }
   const changed = {
     slug: current.slug !== slug.slug,
     destinationUrl: current.destination_url !== destination.url,
@@ -505,29 +580,37 @@ export function updateLink(input: {
     domain: current.domain_id !== domain.id,
   }
   if (!Object.values(changed).some(Boolean)) {
-    return getLinkDetail({ workspaceId: input.user.workspaceId, linkId: input.linkId, role: input.user.role })
+    return getLinkDetail({
+      workspaceId: input.user.workspaceId,
+      linkId: input.linkId,
+      role: input.user.role,
+    })
   }
 
   const update = db.transaction(() => {
-    const result = db.prepare(
-      `UPDATE short_links SET domain_id = ?, slug = ?, destination_url = ?, campaign_id = ?, note = ?, expires_at = ?, enabled = ?, updated_by = ?, updated_at = ?
+    const result = db
+      .prepare(
+        `UPDATE short_links SET domain_id = ?, slug = ?, destination_url = ?, campaign_id = ?, note = ?, expires_at = ?, enabled = ?, updated_by = ?, updated_at = ?
        WHERE id = ? AND workspace_id = ? AND updated_at = ?`,
-    ).run(
-      domain.id,
-      slug.slug,
-      destination.url,
-      input.campaignId || null,
-      note || null,
-      expiry,
-      input.enabled === false ? 0 : 1,
-      input.user.id,
-      timestamp,
-      input.linkId,
-      input.user.workspaceId,
-      current.updated_at,
-    )
+      )
+      .run(
+        domain.id,
+        slug.slug,
+        destination.url,
+        input.campaignId || null,
+        note || null,
+        expiry,
+        input.enabled === false ? 0 : 1,
+        input.user.id,
+        timestamp,
+        input.linkId,
+        input.user.workspaceId,
+        current.updated_at,
+      )
     if (result.changes !== 1) {
-      throw new ConflictError('This link changed in another tab. Reload to review the latest version.')
+      throw new ConflictError(
+        'This link changed in another tab. Reload to review the latest version.',
+      )
     }
     db.prepare(
       `INSERT INTO audit_log (id, workspace_id, actor_user_id, action, entity_type, entity_id, details_json, created_at)
@@ -552,11 +635,20 @@ export function updateLink(input: {
     throw error
   }
 
-  const detail = getLinkDetail({ workspaceId: input.user.workspaceId, linkId: input.linkId, role: input.user.role })
+  const detail = getLinkDetail({
+    workspaceId: input.user.workspaceId,
+    linkId: input.linkId,
+    role: input.user.role,
+  })
   const urls = new Set<string>([detail.shortUrl])
-  if (current.slug !== slug.slug || current.domain_id !== domain.id) urls.add(shortUrl(oldOrigin.origin, current.slug))
+  if (current.slug !== slug.slug || current.domain_id !== domain.id)
+    urls.add(shortUrl(oldOrigin.origin, current.slug))
   schedulePurge([...urls], `${input.linkId}:${timestamp}`)
-  logger.info('link updated', { linkId: input.linkId, workspaceId: input.user.workspaceId, changed })
+  logger.info('link updated', {
+    linkId: input.linkId,
+    workspaceId: input.user.workspaceId,
+    changed,
+  })
   return detail
 }
 
@@ -570,16 +662,26 @@ export function setArchived(input: {
   }
   const db = getDb()
   const current = db
-    .prepare('SELECT id, archived_at, domain_id, slug FROM short_links WHERE id = ? AND workspace_id = ?')
+    .prepare(
+      'SELECT id, archived_at, domain_id, slug FROM short_links WHERE id = ? AND workspace_id = ?',
+    )
     .get(input.linkId, input.user.workspaceId) as
     | { id: string; archived_at: string | null; domain_id: string; slug: string }
     | undefined
   if (!current) throw new NotFoundError('Link not found.')
   if (input.archived && current.archived_at) {
-    return getLinkDetail({ workspaceId: input.user.workspaceId, linkId: input.linkId, role: input.user.role })
+    return getLinkDetail({
+      workspaceId: input.user.workspaceId,
+      linkId: input.linkId,
+      role: input.user.role,
+    })
   }
   if (!input.archived && !current.archived_at) {
-    return getLinkDetail({ workspaceId: input.user.workspaceId, linkId: input.linkId, role: input.user.role })
+    return getLinkDetail({
+      workspaceId: input.user.workspaceId,
+      linkId: input.linkId,
+      role: input.user.role,
+    })
   }
 
   const timestamp = nowIso()
@@ -608,7 +710,11 @@ export function setArchived(input: {
     )
   })
   archive()
-  const detail = getLinkDetail({ workspaceId: input.user.workspaceId, linkId: input.linkId, role: input.user.role })
+  const detail = getLinkDetail({
+    workspaceId: input.user.workspaceId,
+    linkId: input.linkId,
+    role: input.user.role,
+  })
   schedulePurge([detail.shortUrl], `${input.linkId}:${timestamp}`)
   logger.info(input.archived ? 'link archived' : 'link restored', {
     linkId: input.linkId,
@@ -617,7 +723,11 @@ export function setArchived(input: {
   return detail
 }
 
-export function checkSlugAvailability(input: { workspaceId: string; domainId: string; slug: string }): {
+export function checkSlugAvailability(input: {
+  workspaceId: string
+  domainId: string
+  slug: string
+}): {
   normalized: string | null
   available: boolean
   error?: string
@@ -650,7 +760,9 @@ export function schedulePurge(urls: string[], version: string): void {
       maxAttempts: 5,
     })
   } catch (error) {
-    logger.error('could not enqueue cache purge', { error: error instanceof Error ? error.message : String(error) })
+    logger.error('could not enqueue cache purge', {
+      error: error instanceof Error ? error.message : String(error),
+    })
   }
 }
 

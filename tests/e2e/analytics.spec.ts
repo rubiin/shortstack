@@ -1,13 +1,18 @@
 import { expect, test } from '@playwright/test'
+
 import { gotoHydrated } from './support'
 test.describe('analytics', () => {
-  test('reads minimized analytics, filters campaigns, and downloads a background CSV export', async ({ page }) => {
+  test('reads minimized analytics, filters campaigns, and downloads a background CSV export', async ({
+    page,
+  }) => {
     await gotoHydrated(page, '/app/analytics')
     await expect(page.getByRole('heading', { name: 'Signal, not surveillance.' })).toBeVisible()
     await expect(page.getByText('Clicks', { exact: true })).toBeVisible()
     await expect(page.getByText('Top country', { exact: true })).toBeVisible()
     await expect(page.getByText('Mobile share', { exact: true })).toBeVisible()
-    await expect(page.getByText(/No IP addresses, raw user agents, or visitor profiles/)).toBeVisible()
+    await expect(
+      page.getByText(/No IP addresses, raw user agents, or visitor profiles/),
+    ).toBeVisible()
 
     await page.getByRole('link', { name: '7d', exact: true }).click()
     await expect(page).toHaveURL(/days=7/)

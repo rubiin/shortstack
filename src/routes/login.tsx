@@ -1,9 +1,10 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
-import { getSessionFn, loginFn } from '~/server/functions/auth'
+import { useState } from 'react'
+import type { FormEvent } from 'react'
+
 import { Field, InlineAlert, SubmitButton } from '~/components/ui'
+import { getSessionFn, loginFn } from '~/server/functions/auth'
 
 type LoginSearch = { next?: string }
 
@@ -172,8 +173,7 @@ function LoginPage() {
           <div className="demo-creds">
             <span className="field-label">Demo accounts</span>
             <span>
-              Owner <code>maya@northstar.example</code> · Member{' '}
-              <code>theo@northstar.example</code>
+              Owner <code>maya@northstar.example</code> · Member <code>theo@northstar.example</code>
             </span>
             <span>
               Password <code>shortstack-demo</code> unless SEED_PASSWORD was changed.

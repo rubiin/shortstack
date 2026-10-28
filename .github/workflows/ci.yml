@@ -7,7 +7,7 @@ on:
 
 jobs:
   check:
-    name: Typecheck, test, build, e2e
+    name: Lint, typecheck, test, build, e2e
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -24,6 +24,12 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Check formatting
+        run: pnpm fmt:check
 
       - name: Typecheck
         run: pnpm typecheck

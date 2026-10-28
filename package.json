@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=22.12"
-  },
   "scripts": {
     "dev": "concurrently -k -n web,worker -c cyan,magenta \"vite dev --port 3000\" \"npm:worker\"",
     "dev:test": "tsx scripts/reset.ts && concurrently -k -n web,worker -c cyan,magenta \"vite dev --port 3100 --host 127.0.0.1\" \"npm:worker\"",
@@ -21,8 +18,10 @@
     "test:e2e": "playwright test",
     "test:all": "npm run test && npm run test:e2e",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
-    "check": "npm run typecheck && npm run test && npm run build"
+    "lint": "oxlint .",
+    "fmt": "oxfmt .",
+    "fmt:check": "oxfmt --check .",
+    "check": "npm run typecheck && npm run lint && npm run fmt:check && npm run test && npm run build"
   },
   "dependencies": {
     "@tanstack/react-router": "^1.170.46",
@@ -30,24 +29,29 @@
     "better-sqlite3": "^13.0.3",
     "fflate": "^0.8.3",
     "qrcode": "^1.5.4",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
     "@tanstack/router-plugin": "^1.168.48",
-    "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^24.10.1",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.6.5",
     "@types/qrcode": "^1.5.6",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "concurrently": "^10.0.6",
     "nitro": "^3.0.260903-beta",
+    "oxfmt": "^0.75.0",
+    "oxlint": "^1.90.0",
     "tsx": "^4.23.15",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=22.12"
   }
 }

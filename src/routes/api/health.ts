@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+
 import { assertSchemaHealthy } from '~/server/db'
 
 export const Route = createFileRoute('/api/health')({

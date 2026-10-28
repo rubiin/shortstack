@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { getDb } from '../../src/server/db'
 import { redirectResponse, resolveRedirect, unavailableResponse } from '../../src/server/redirects'
 import { countClicks, insertLink, seedWorkspace } from '../helpers'
@@ -36,7 +37,15 @@ describe('resolveRedirect', () => {
       device_class: 'mobile',
     })
     expect(Object.keys(row).sort()).toEqual(
-      ['country_code', 'day', 'device_class', 'id', 'link_id', 'referrer_domain', 'workspace_id'].sort(),
+      [
+        'country_code',
+        'day',
+        'device_class',
+        'id',
+        'link_id',
+        'referrer_domain',
+        'workspace_id',
+      ].sort(),
     )
     expect(JSON.stringify(row)).not.toContain('secret')
     expect(JSON.stringify(row)).not.toContain('iPhone')
@@ -66,9 +75,15 @@ describe('resolveRedirect', () => {
       archivedAt: '2026-01-01T00:00:00.000Z',
     })
     insertLink(fixture, { slug: 'known-slug' })
-    expect(resolveRedirect({ host: 'links.test', slug: 'not-known', now })).toEqual({ kind: 'not_found' })
-    expect(resolveRedirect({ host: 'links.test', slug: 'archived-link', now })).toEqual({ kind: 'not_found' })
-    expect(resolveRedirect({ host: 'other.test', slug: 'known-slug', now })).toEqual({ kind: 'not_found' })
+    expect(resolveRedirect({ host: 'links.test', slug: 'not-known', now })).toEqual({
+      kind: 'not_found',
+    })
+    expect(resolveRedirect({ host: 'links.test', slug: 'archived-link', now })).toEqual({
+      kind: 'not_found',
+    })
+    expect(resolveRedirect({ host: 'other.test', slug: 'known-slug', now })).toEqual({
+      kind: 'not_found',
+    })
     expect(resolveRedirect({ host: 'links.test', slug: 'api', now })).toEqual({ kind: 'not_found' })
     expect(countClicks(archived)).toBe(0)
   })
@@ -76,7 +91,9 @@ describe('resolveRedirect', () => {
   it('keeps redirecting while the promise has not passed', () => {
     const fixture = seedWorkspace()
     insertLink(fixture, { slug: 'soon', expiresAt: '2026-10-26T13:45:01.000Z' })
-    expect(resolveRedirect({ host: 'links.test', slug: 'soon', now })).toMatchObject({ kind: 'redirect' })
+    expect(resolveRedirect({ host: 'links.test', slug: 'soon', now })).toMatchObject({
+      kind: 'redirect',
+    })
   })
 })
 

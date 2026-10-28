@@ -1,2 +1,12 @@
 allowBuilds:
   esbuild: true
+
+# dependency behavior
+blockExoticSubdeps: false
+dedupeDirectDeps: true
+minimumReleaseAge: 0
+
+# hoisting behavior
+hoist: true
+shamefullyHoist: true
+ignoreWorkspaceRootCheck: true

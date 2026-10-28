@@ -1,8 +1,11 @@
 import { expect, test } from '@playwright/test'
+
 import { gotoHydrated, reloadHydrated, requestShortLink, totalClicks, uniqueSlug } from './support'
 
 test.describe('links', () => {
-  test('creates a link, redirects a visitor, then pauses, archives, and restores it', async ({ page }) => {
+  test('creates a link, redirects a visitor, then pauses, archives, and restores it', async ({
+    page,
+  }) => {
     const slug = uniqueSlug('e2e-link')
     const destination = 'https://example.com/e2e/landing?utm_source=shortstack&utm_medium=email'
 
@@ -14,7 +17,9 @@ test.describe('links', () => {
 
     await page.waitForURL(/\/app\/links\/lnk_[^?]+\?saved=1/)
     await expect(page.getByRole('heading', { name: `/${slug}` })).toBeVisible()
-    await expect(page.getByText('Link saved. The redirect is live with the new settings.')).toBeVisible()
+    await expect(
+      page.getByText('Link saved. The redirect is live with the new settings.'),
+    ).toBeVisible()
     await expect(page.getByText('Active', { exact: true })).toBeVisible()
     expect(await totalClicks(page)).toBe('0')
 
@@ -59,7 +64,9 @@ test.describe('links', () => {
     expect(await totalClicks(page)).toBe('1')
 
     await page.getByRole('button', { name: 'Restore link', exact: true }).click()
-    await expect(page.locator('dialog').getByRole('heading', { name: 'Restore this link?' })).toBeVisible()
+    await expect(
+      page.locator('dialog').getByRole('heading', { name: 'Restore this link?' }),
+    ).toBeVisible()
     await page.locator('dialog').getByRole('button', { name: 'Restore link', exact: true }).click()
     await expect(page.getByText('Link restored.')).toBeVisible()
 
@@ -80,7 +87,9 @@ test.describe('links', () => {
     await page.locator('#destinationUrl').fill('https://example.com/duplicate')
     await page.getByRole('button', { name: 'Create link' }).click()
     await expect(page.getByText('Could not save', { exact: true })).toBeVisible()
-    await expect(page.getByText('That slug is already in use on this domain.', { exact: true })).toBeVisible()
+    await expect(
+      page.getByText('That slug is already in use on this domain.', { exact: true }),
+    ).toBeVisible()
     await expect(page).toHaveURL(/\/app\/links\/new/)
   })
 

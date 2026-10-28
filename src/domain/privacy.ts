@@ -23,7 +23,10 @@ export function referrerDomain(referrer: string | null | undefined): string {
   try {
     const parsed = new URL(referrer)
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return 'direct'
-    const host = parsed.hostname.toLowerCase().replace(/\.$/, '').replace(/^www\./, '')
+    const host = parsed.hostname
+      .toLowerCase()
+      .replace(/\.$/, '')
+      .replace(/^www\./, '')
     if (!host || host.length > 253 || !host.includes('.')) return 'direct'
     return host
   } catch {

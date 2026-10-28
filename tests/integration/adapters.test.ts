@@ -2,9 +2,11 @@ import { createHmac } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
-import { assertSafeKey, LocalObjectStorage, StorageError } from '../../src/server/adapters/storage'
+
 import { CloudflareCacheAdapter } from '../../src/server/adapters/cloudflare'
+import { assertSafeKey, LocalObjectStorage, StorageError } from '../../src/server/adapters/storage'
 
 const secret = 'test-signing-secret'
 
@@ -25,7 +27,11 @@ describe('local object storage', () => {
   it('writes, reads, and deletes files', async () => {
     const { storage, cleanup } = makeStorage()
     try {
-      await storage.put('exports/ws_one/one.csv', new TextEncoder().encode('a,b\r\n1,2\r\n'), 'text/csv')
+      await storage.put(
+        'exports/ws_one/one.csv',
+        new TextEncoder().encode('a,b\r\n1,2\r\n'),
+        'text/csv',
+      )
       expect(await storage.exists('exports/ws_one/one.csv')).toBe(true)
       const file = await storage.get('exports/ws_one/one.csv', 'text/csv')
       expect(file.bytes.toString()).toBe('a,b\r\n1,2\r\n')
@@ -49,10 +55,16 @@ describe('local object storage', () => {
       expect(storage.verifySignedUrl('garbage')).toBeNull()
 
       const payload = Buffer.from('exports/ws/one.csv:9999999999').toString('base64url')
-      const signature = createHmac('sha256', secret).update(`exports/ws/one.csv:9999999999`).digest('base64url')
-      expect(storage.verifySignedUrl(`${payload}.${signature}`)).toMatchObject({ key: 'exports/ws/one.csv' })
+      const signature = createHmac('sha256', secret)
+        .update(`exports/ws/one.csv:9999999999`)
+        .digest('base64url')
+      expect(storage.verifySignedUrl(`${payload}.${signature}`)).toMatchObject({
+        key: 'exports/ws/one.csv',
+      })
       const expiredPayload = Buffer.from('exports/ws/one.csv:1').toString('base64url')
-      const expiredSignature = createHmac('sha256', secret).update('exports/ws/one.csv:1').digest('base64url')
+      const expiredSignature = createHmac('sha256', secret)
+        .update('exports/ws/one.csv:1')
+        .digest('base64url')
       expect(storage.verifySignedUrl(`${expiredPayload}.${expiredSignature}`)).toBeNull()
     } finally {
       cleanup()
@@ -60,7 +72,12 @@ describe('local object storage', () => {
   })
 
   it('rejects unsafe keys', () => {
-    for (const key of ['../secret.txt', '/etc/passwd', 'exports//one.csv', 'a'.repeat(600) + '.csv']) {
+    for (const key of [
+      '../secret.txt',
+      '/etc/passwd',
+      'exports//one.csv',
+      'a'.repeat(600) + '.csv',
+    ]) {
       expect(() => assertSafeKey(key)).toThrow(StorageError)
     }
     expect(() => assertSafeKey('exports/ws/one.csv')).not.toThrow()
@@ -131,7 +148,8 @@ describe('Cloudflare cache purge adapter', () => {
 
     const rejected = new CloudflareCacheAdapter({
       ...base,
-      fetchImpl: (async () => new Response(JSON.stringify({ success: false }), { status: 200 })) as typeof fetch,
+      fetchImpl: (async () =>
+        new Response(JSON.stringify({ success: false }), { status: 200 })) as typeof fetch,
     })
     expect(await rejected.purge(['https://links.test/one'])).toMatchObject({
       ok: false,
@@ -146,7 +164,10 @@ describe('Cloudflare cache purge adapter', () => {
         throw error
       }) as typeof fetch,
     })
-    expect(await timeout.purge(['https://links.test/one'])).toMatchObject({ ok: false, code: 'timeout' })
+    expect(await timeout.purge(['https://links.test/one'])).toMatchObject({
+      ok: false,
+      code: 'timeout',
+    })
 
     const network = new CloudflareCacheAdapter({
       ...base,
@@ -171,7 +192,10 @@ describe('Cloudflare cache purge adapter', () => {
         return new Response('')
       }) as typeof fetch,
     })
-    expect(await adapter.purge(['https://links.test/one'])).toMatchObject({ ok: false, code: 'unauthorized' })
+    expect(await adapter.purge(['https://links.test/one'])).toMatchObject({
+      ok: false,
+      code: 'unauthorized',
+    })
     expect(called).toBe(false)
   })
 })

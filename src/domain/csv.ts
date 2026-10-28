@@ -13,7 +13,10 @@ export type ParsedCsv = {
   rows: Array<{ rowNumber: number; values: string[] }>
 }
 
-export function parseCsv(input: string, options: { maxBytes?: number; maxRows?: number } = {}): ParsedCsv {
+export function parseCsv(
+  input: string,
+  options: { maxBytes?: number; maxRows?: number } = {},
+): ParsedCsv {
   const maxBytes = options.maxBytes ?? CSV_MAX_BYTES
   const maxRows = options.maxRows ?? CSV_MAX_ROWS
   if (new TextEncoder().encode(input).byteLength > maxBytes) {
@@ -124,5 +127,9 @@ export function csvEscape(value: unknown): string {
 }
 
 export function toCsv(headers: string[], rows: Array<Array<unknown>>): string {
-  return [headers.map(csvEscape).join(','), ...rows.map((row) => row.map(csvEscape).join(','))].join('\r\n') + '\r\n'
+  return (
+    [headers.map(csvEscape).join(','), ...rows.map((row) => row.map(csvEscape).join(','))].join(
+      '\r\n',
+    ) + '\r\n'
+  )
 }

@@ -1,5 +1,13 @@
 import { ZodError } from 'zod'
-import { AuthorizationError, ConflictError, NotFoundError, RateLimitError, ValidationError } from '~/domain/authz'
+
+import {
+  AuthorizationError,
+  ConflictError,
+  NotFoundError,
+  RateLimitError,
+  ValidationError,
+} from '~/domain/authz'
+
 import { logger } from '../log'
 
 export type ActionFailure = {
@@ -49,7 +57,9 @@ export function actionError(error: unknown, context: string): ActionFailure {
   }
   logger.error('unexpected action failure', {
     context,
-    ...(error instanceof Error ? { errorName: error.name, message: error.message } : { error: String(error) }),
+    ...(error instanceof Error
+      ? { errorName: error.name, message: error.message }
+      : { error: String(error) }),
   })
   return fail('Something went wrong on our side. Nothing was changed. Please try again.')
 }

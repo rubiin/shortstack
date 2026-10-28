@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import {
   classifyDevice,
   coarseCountry,
@@ -10,7 +11,9 @@ import {
 
 describe('classifyDevice', () => {
   it('classifies common devices roughly, without keeping the user agent', () => {
-    expect(classifyDevice('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile')).toBe('mobile')
+    expect(classifyDevice('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile')).toBe(
+      'mobile',
+    )
     expect(classifyDevice('Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X)')).toBe('tablet')
     expect(classifyDevice('Mozilla/5.0 (Android 15; Mobile; rv:130.0)')).toBe('mobile')
     expect(classifyDevice('Mozilla/5.0 (Android 15; Tablet; rv:130.0)')).toBe('tablet')

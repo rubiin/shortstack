@@ -1,25 +1,15 @@
-import { getDb } from './db'
-import { getConfig } from './config'
-import { newId, nowIso, randomToken } from './ids'
-import { logger } from './log'
+import { ConflictError, NotFoundError, ValidationError, type AuthUser } from '~/domain/authz'
 import { parseCsv, CsvError } from '~/domain/csv'
+import { normalizeDestination } from '~/domain/destination'
 import {
   IMPORT_FIELDS,
   autoMap,
   normalizeImportRow,
   validateMapping,
-  type ImportField,
   type ImportMapping,
 } from '~/domain/import'
 import { normalizeSlug, suggestAvailableSlug } from '~/domain/slug'
-import { normalizeDestination } from '~/domain/destination'
 import { parseDateTimeLocalUtc } from '~/domain/time'
-import {
-  ConflictError,
-  NotFoundError,
-  ValidationError,
-  type AuthUser,
-} from '~/domain/authz'
 import type {
   DomainOption,
   ImportBatchStatus,
@@ -27,7 +17,12 @@ import type {
   ImportRowError,
   ImportRowView,
 } from '~/domain/types'
+
+import { getConfig } from './config'
+import { getDb } from './db'
+import { newId, nowIso, randomToken } from './ids'
 import { getPublicUrl } from './links'
+import { logger } from './log'
 
 type BatchRow = {
   id: string
@@ -78,8 +73,15 @@ function loadBatch(workspaceId: string, batchId: string): BatchRow {
 function domainOptions(workspaceId: string): DomainOption[] {
   return (
     getDb()
-      .prepare("SELECT id, hostname, origin, is_default FROM domains WHERE workspace_id = ? AND status = 'active' ORDER BY is_default DESC")
-      .all(workspaceId) as Array<{ id: string; hostname: string; origin: string; is_default: number }>
+      .prepare(
+        "SELECT id, hostname, origin, is_default FROM domains WHERE workspace_id = ? AND status = 'active' ORDER BY is_default DESC",
+      )
+      .all(workspaceId) as Array<{
+      id: string
+      hostname: string
+      origin: string
+      is_default: number
+    }>
   ).map((row) => ({
     id: row.id,
     hostname: row.hostname,
@@ -90,7 +92,9 @@ function domainOptions(workspaceId: string): DomainOption[] {
 
 function slugExists(domainId: string, slug: string): boolean {
   return Boolean(
-    getDb().prepare('SELECT 1 FROM short_links WHERE domain_id = ? AND slug = ?').get(domainId, slug),
+    getDb()
+      .prepare('SELECT 1 FROM short_links WHERE domain_id = ? AND slug = ?')
+      .get(domainId, slug),
   )
 }
 
@@ -134,7 +138,9 @@ export function createImportBatch(input: {
     throw error
   }
   const domain = db
-    .prepare("SELECT id FROM domains WHERE workspace_id = ? AND status = 'active' AND is_default = 1")
+    .prepare(
+      "SELECT id FROM domains WHERE workspace_id = ? AND status = 'active' AND is_default = 1",
+    )
     .get(input.user.workspaceId) as { id: string } | undefined
   if (!domain) throw new ValidationError('No active default domain is configured.')
   const mapping = autoMap(parsed.headers)
@@ -250,7 +256,10 @@ type StoredRowInput = {
   enabled: boolean
 }
 
-function validateStoredRow(input: StoredRowInput, now: Date): {
+function validateStoredRow(
+  input: StoredRowInput,
+  now: Date,
+): {
   normalized: StoredRowInput
   errors: ImportRowError[]
 } {
@@ -260,12 +269,16 @@ function validateStoredRow(input: StoredRowInput, now: Date): {
   const destination = normalizeDestination(input.destinationUrl ?? '')
   if (!destination.ok) errors.push({ field: 'destination_url', message: destination.error })
   const campaignName = (input.campaignName ?? '').trim()
-  if (campaignName.length > 80) errors.push({ field: 'campaign', message: 'Campaign names can be at most 80 characters.' })
+  if (campaignName.length > 80)
+    errors.push({ field: 'campaign', message: 'Campaign names can be at most 80 characters.' })
   const note = (input.note ?? '').trim()
-  if (note.length > 500) errors.push({ field: 'note', message: 'Notes can be at most 500 characters.' })
+  if (note.length > 500)
+    errors.push({ field: 'note', message: 'Notes can be at most 500 characters.' })
   let expiresAt: string | null = null
   if (input.expiresAt) {
-    expiresAt = parseDateTimeLocalUtc(input.expiresAt) ?? (Number.isNaN(Date.parse(input.expiresAt)) ? null : new Date(input.expiresAt).toISOString())
+    expiresAt =
+      parseDateTimeLocalUtc(input.expiresAt) ??
+      (Number.isNaN(Date.parse(input.expiresAt)) ? null : new Date(input.expiresAt).toISOString())
     if (!expiresAt) errors.push({ field: 'expires_at', message: 'Expiry is not a valid date.' })
     else if (Date.parse(expiresAt) <= now.getTime()) {
       errors.push({ field: 'expires_at', message: 'Expiry must be in the future.' })
@@ -284,7 +297,10 @@ function validateStoredRow(input: StoredRowInput, now: Date): {
   }
 }
 
-function revalidateBatch(input: { workspaceId: string; batchId: string; domainId: string }, now = new Date()): void {
+function revalidateBatch(
+  input: { workspaceId: string; batchId: string; domainId: string },
+  now = new Date(),
+): void {
   const db = getDb()
   const rows = db
     .prepare('SELECT * FROM import_rows WHERE batch_id = ? ORDER BY row_number')
@@ -318,7 +334,10 @@ function revalidateBatch(input: { workspaceId: string; batchId: string; domainId
       status = 'invalid'
     } else if (seen.has(result.normalized.slug)) {
       status = 'duplicate'
-      const source = rows.find((candidate) => candidate.slug === result.normalized.slug && candidate.row_number < row.row_number)
+      const source = rows.find(
+        (candidate) =>
+          candidate.slug === result.normalized.slug && candidate.row_number < row.row_number,
+      )
       suggested = findFreeSuggestion(result.normalized.slug, input.domainId, seen)
       errors.push({
         field: 'slug',
@@ -375,7 +394,10 @@ export function previewImport(input: {
   }
   const headers = JSON.parse(batch.headers_json) as string[]
   const mapping = Object.fromEntries(
-    IMPORT_FIELDS.map((field) => [field, typeof input.mapping[field] === 'string' ? input.mapping[field] : null]),
+    IMPORT_FIELDS.map((field) => [
+      field,
+      typeof input.mapping[field] === 'string' ? input.mapping[field] : null,
+    ]),
   ) as ImportMapping
   const mappingErrors = validateMapping(mapping, headers)
   if (mappingErrors.length) {
@@ -386,7 +408,8 @@ export function previewImport(input: {
     .prepare("SELECT id FROM domains WHERE id = ? AND workspace_id = ? AND status = 'active'")
     .get(domainId, input.user.workspaceId) as { id: string } | undefined
   if (!domain) throw new ValidationError('Choose an active domain.')
-  if (!batch.raw_csv) throw new ValidationError('The raw CSV for this import has expired. Start a new import.')
+  if (!batch.raw_csv)
+    throw new ValidationError('The raw CSV for this import has expired. Start a new import.')
 
   const parsed = parseCsv(batch.raw_csv)
   const now = new Date()
@@ -396,12 +419,14 @@ export function previewImport(input: {
       'UPDATE import_batches SET mapping_json = ?, domain_id = ?, total_rows = ?, updated_at = ? WHERE id = ?',
     ).run(JSON.stringify(mapping), domainId, parsed.rows.length, nowIso(), input.batchId)
     for (const row of parsed.rows) {
-      const raw = Object.fromEntries(parsed.headers.map((header, index) => [header, row.values[index] ?? ''])) as Record<
-        string,
-        string
-      >
+      const raw = Object.fromEntries(
+        parsed.headers.map((header, index) => [header, row.values[index] ?? '']),
+      ) as Record<string, string>
       const normalized = normalizeImportRow(raw, mapping, now)
-      const errors = Object.entries(normalized.errors).map(([field, message]) => ({ field, message }))
+      const errors = Object.entries(normalized.errors).map(([field, message]) => ({
+        field,
+        message,
+      }))
       db.prepare(
         `INSERT INTO import_rows
          (id, batch_id, workspace_id, row_number, raw_json, slug, destination_url, campaign_name, note, expires_at, enabled,
@@ -443,7 +468,8 @@ export function updateImportRow(input: {
 }): ImportBatchView {
   const db = getDb()
   const batch = loadBatch(input.user.workspaceId, input.batchId)
-  if (batch.status !== 'previewed') throw new ValidationError('Preview this import before editing rows.')
+  if (batch.status !== 'previewed')
+    throw new ValidationError('Preview this import before editing rows.')
   const row = db
     .prepare('SELECT * FROM import_rows WHERE id = ? AND batch_id = ?')
     .get(input.rowId, input.batchId) as RowRow | undefined
@@ -462,7 +488,11 @@ export function updateImportRow(input: {
     row.id,
   )
   const update = db.transaction(() => {
-    revalidateBatch({ workspaceId: input.user.workspaceId, batchId: input.batchId, domainId: batch.domain_id })
+    revalidateBatch({
+      workspaceId: input.user.workspaceId,
+      batchId: input.batchId,
+      domainId: batch.domain_id,
+    })
   })
   update()
   return viewBatch(input.user.workspaceId, input.batchId)
@@ -476,33 +506,40 @@ export function setImportRowExcluded(input: {
 }): ImportBatchView {
   const db = getDb()
   const batch = loadBatch(input.user.workspaceId, input.batchId)
-  if (batch.status !== 'previewed') throw new ValidationError('Preview this import before editing rows.')
-  db.prepare("UPDATE import_rows SET status = ?, updated_at = ? WHERE id = ? AND batch_id = ? AND status != 'created'").run(
-    input.excluded ? 'excluded' : 'pending',
-    nowIso(),
-    input.rowId,
-    input.batchId,
-  )
-  revalidateBatch({ workspaceId: input.user.workspaceId, batchId: input.batchId, domainId: batch.domain_id })
+  if (batch.status !== 'previewed')
+    throw new ValidationError('Preview this import before editing rows.')
+  db.prepare(
+    "UPDATE import_rows SET status = ?, updated_at = ? WHERE id = ? AND batch_id = ? AND status != 'created'",
+  ).run(input.excluded ? 'excluded' : 'pending', nowIso(), input.rowId, input.batchId)
+  revalidateBatch({
+    workspaceId: input.user.workspaceId,
+    batchId: input.batchId,
+    domainId: batch.domain_id,
+  })
   return viewBatch(input.user.workspaceId, input.batchId)
 }
 
 export function applySuggestedSlugs(input: { user: AuthUser; batchId: string }): ImportBatchView {
   const db = getDb()
   const batch = loadBatch(input.user.workspaceId, input.batchId)
-  if (batch.status !== 'previewed') throw new ValidationError('Preview this import before editing rows.')
+  if (batch.status !== 'previewed')
+    throw new ValidationError('Preview this import before editing rows.')
   const rows = db
-    .prepare("SELECT id, suggested_slug FROM import_rows WHERE batch_id = ? AND status = 'duplicate' AND suggested_slug IS NOT NULL")
+    .prepare(
+      "SELECT id, suggested_slug FROM import_rows WHERE batch_id = ? AND status = 'duplicate' AND suggested_slug IS NOT NULL",
+    )
     .all(input.batchId) as Array<{ id: string; suggested_slug: string }>
   const transaction = db.transaction(() => {
     for (const row of rows) {
-      db.prepare("UPDATE import_rows SET slug = ?, status = 'pending', updated_at = ? WHERE id = ?").run(
-        row.suggested_slug,
-        nowIso(),
-        row.id,
-      )
+      db.prepare(
+        "UPDATE import_rows SET slug = ?, status = 'pending', updated_at = ? WHERE id = ?",
+      ).run(row.suggested_slug, nowIso(), row.id)
     }
-    revalidateBatch({ workspaceId: input.user.workspaceId, batchId: input.batchId, domainId: batch.domain_id })
+    revalidateBatch({
+      workspaceId: input.user.workspaceId,
+      batchId: input.batchId,
+      domainId: batch.domain_id,
+    })
   })
   transaction()
   return viewBatch(input.user.workspaceId, input.batchId)
@@ -536,7 +573,9 @@ export function commitImport(input: {
   }
 
   const rows = db
-    .prepare("SELECT * FROM import_rows WHERE batch_id = ? AND status = 'valid' ORDER BY row_number")
+    .prepare(
+      "SELECT * FROM import_rows WHERE batch_id = ? AND status = 'valid' ORDER BY row_number",
+    )
     .all(input.batchId) as RowRow[]
   if (rows.length === 0) throw new ValidationError('There are no valid rows to create.')
   const now = new Date()
@@ -555,7 +594,8 @@ export function commitImport(input: {
 
     const seen = new Set<string>()
     for (const row of rows) {
-      if (!row.slug || !row.destination_url) throw new ConflictError(`Row ${row.row_number} is incomplete.`)
+      if (!row.slug || !row.destination_url)
+        throw new ConflictError(`Row ${row.row_number} is incomplete.`)
       if (seen.has(row.slug) || slugExists(batch.domain_id, row.slug)) {
         throw new ConflictError(
           `Slug "${row.slug}" was claimed after preview. Review the import again before creating links.`,
@@ -601,7 +641,11 @@ export function commitImport(input: {
         JSON.stringify({ slug: row.slug, importBatchId: input.batchId, rowNumber: row.row_number }),
         timestamp,
       )
-      created.push({ id: linkId, slug: row.slug, shortUrl: getPublicUrl(batch.domain_origin, row.slug) })
+      created.push({
+        id: linkId,
+        slug: row.slug,
+        shortUrl: getPublicUrl(batch.domain_origin, row.slug),
+      })
     }
 
     db.prepare(

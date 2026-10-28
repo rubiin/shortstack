@@ -1,6 +1,6 @@
+import type { AuthUser, UserRole } from '../src/domain/authz'
 import { getDb } from '../src/server/db'
 import { nowIso } from '../src/server/ids'
-import type { AuthUser, UserRole } from '../src/domain/authz'
 
 export type Fixture = {
   workspaceId: string
@@ -10,17 +10,19 @@ export type Fixture = {
   user: AuthUser
 }
 
-export function seedWorkspace(options: {
-  workspaceId?: string
-  userId?: string
-  role?: UserRole
-  email?: string
-  domainId?: string
-  hostname?: string
-  origin?: string
-  campaignId?: string
-  defaultDomain?: boolean
-} = {}): Fixture {
+export function seedWorkspace(
+  options: {
+    workspaceId?: string
+    userId?: string
+    role?: UserRole
+    email?: string
+    domainId?: string
+    hostname?: string
+    origin?: string
+    campaignId?: string
+    defaultDomain?: boolean
+  } = {},
+): Fixture {
   const db = getDb()
   const workspaceId = options.workspaceId ?? 'ws_test'
   const userId = options.userId ?? 'usr_test'
@@ -51,7 +53,15 @@ export function seedWorkspace(options: {
   db.prepare(
     `INSERT INTO domains (id, workspace_id, hostname, origin, status, is_default, created_at, verified_at)
      VALUES (?, ?, ?, ?, 'active', ?, ?, ?)`,
-  ).run(domainId, workspaceId, hostname, origin, options.defaultDomain === false ? 0 : 1, timestamp, timestamp)
+  ).run(
+    domainId,
+    workspaceId,
+    hostname,
+    origin,
+    options.defaultDomain === false ? 0 : 1,
+    timestamp,
+    timestamp,
+  )
   db.prepare(
     'INSERT INTO campaigns (id, workspace_id, name, status, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?)',
   ).run(campaignId, workspaceId, 'Test Campaign', 'active', userId, timestamp)
@@ -113,7 +123,9 @@ export function insertLink(
 
 export function countClicks(linkId?: string): number {
   const row = linkId
-    ? (getDb().prepare('SELECT count(*) AS n FROM click_events WHERE link_id = ?').get(linkId) as { n: number })
+    ? (getDb().prepare('SELECT count(*) AS n FROM click_events WHERE link_id = ?').get(linkId) as {
+        n: number
+      })
     : (getDb().prepare('SELECT count(*) AS n FROM click_events').get() as { n: number })
   return Number(row.n)
 }

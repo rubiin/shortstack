@@ -52,14 +52,19 @@ export function getConfig(): AppConfig {
   loadEnvironment()
   const parsed = envSchema.safeParse(process.env)
   if (!parsed.success) {
-    const detail = parsed.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join('; ')
+    const detail = parsed.error.issues
+      .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+      .join('; ')
     throw new Error(`Invalid environment configuration: ${detail}`)
   }
   const env = parsed.data
   if (env.NODE_ENV === 'production' && env.SESSION_SECRET.startsWith('shortstack-development')) {
     throw new Error('SESSION_SECRET must be replaced in production')
   }
-  if (env.NODE_ENV === 'production' && env.FILE_SIGNING_SECRET.startsWith('shortstack-development')) {
+  if (
+    env.NODE_ENV === 'production' &&
+    env.FILE_SIGNING_SECRET.startsWith('shortstack-development')
+  ) {
     throw new Error('FILE_SIGNING_SECRET must be replaced in production')
   }
   if (!/^https?:\/\//.test(env.SHORT_LINK_ORIGIN)) {

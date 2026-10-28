@@ -1,9 +1,10 @@
-import { getDb } from './db'
-import { newId, nowIso } from './ids'
-import { logger } from './log'
 import { classifyDevice, coarseCountry, referrerDomain } from '~/domain/privacy'
 import { normalizeSlug } from '~/domain/slug'
 import { effectiveLinkState } from '~/domain/time'
+
+import { getDb } from './db'
+import { newId } from './ids'
+import { logger } from './log'
 
 export type RedirectResolution =
   | { kind: 'redirect'; linkId: string; destination: string }
@@ -103,7 +104,9 @@ export function redirectResponse(destination: string): Response {
   })
 }
 
-export function unavailableResponse(kind: 'not_found' | 'disabled' | 'expired' | 'archived'): Response {
+export function unavailableResponse(
+  kind: 'not_found' | 'disabled' | 'expired' | 'archived',
+): Response {
   const title =
     kind === 'expired'
       ? 'This link has expired'
@@ -161,7 +164,8 @@ export function unavailableResponse(kind: 'not_found' | 'disabled' | 'expired' |
       'Referrer-Policy': 'no-referrer',
       'X-Robots-Tag': 'noindex, nofollow',
       'X-Content-Type-Options': 'nosniff',
-      'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+      'Content-Security-Policy':
+        "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
     },
   })
 }

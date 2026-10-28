@@ -1,12 +1,14 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { randomUUID } from 'node:crypto'
+
 import { getConfig } from './config'
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 type LogFields = Record<string, unknown>
 
 const levels: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, error: 40 }
-const secretKey = /pass(word)?|secret|token|cookie|authorization|api[-_]?key|raw_csv|rawCsv|destination/i
+const secretKey =
+  /pass(word)?|secret|token|cookie|authorization|api[-_]?key|raw_csv|rawCsv|destination/i
 
 type RequestLogContext = {
   correlationId: string

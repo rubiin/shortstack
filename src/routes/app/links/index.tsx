@@ -1,9 +1,10 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { listLinksFn } from '~/server/functions/links'
-import type { LinkListItem } from '~/domain/types'
+
+import { CopyButton, EmptyState, StatePill, StatCard } from '~/components/ui'
 import type { LinkState } from '~/domain/time'
 import { formatUtc } from '~/domain/time'
-import { CopyButton, EmptyState, StatePill, StatCard } from '~/components/ui'
+import type { LinkListItem } from '~/domain/types'
+import { listLinksFn } from '~/server/functions/links'
 
 type LinkSearch = {
   search?: string
@@ -51,7 +52,9 @@ export const Route = createFileRoute('/app/links/')({
 function LinksPage() {
   const data = Route.useLoaderData()
   const search = Route.useSearch()
-  const filtered = Boolean(search.search || search.campaignId || (search.state && search.state !== 'active'))
+  const filtered = Boolean(
+    search.search || search.campaignId || (search.state && search.state !== 'active'),
+  )
   const totalPages = Math.max(1, Math.ceil(data.total / data.pageSize))
 
   return (
@@ -73,9 +76,21 @@ function LinksPage() {
       </div>
 
       <div className="stat-grid">
-        <StatCard label="Active links" value={data.stats.activeLinks} note="Live and ready to share" />
-        <StatCard label="Clicks · 7 days" value={data.stats.clicks7d} note="All active and historical links" />
-        <StatCard label="Expiring soon" value={data.stats.expiring7d} note="Within the next 7 days" />
+        <StatCard
+          label="Active links"
+          value={data.stats.activeLinks}
+          note="Live and ready to share"
+        />
+        <StatCard
+          label="Clicks · 7 days"
+          value={data.stats.clicks7d}
+          note="All active and historical links"
+        />
+        <StatCard
+          label="Expiring soon"
+          value={data.stats.expiring7d}
+          note="Within the next 7 days"
+        />
         <StatCard label="Archived" value={data.stats.archivedLinks} note="Kept for the record" />
       </div>
 
@@ -97,7 +112,12 @@ function LinksPage() {
           <label className="sr-only" htmlFor="state-filter">
             Link state
           </label>
-          <select id="state-filter" className="select" name="state" defaultValue={search.state ?? 'active'}>
+          <select
+            id="state-filter"
+            className="select"
+            name="state"
+            defaultValue={search.state ?? 'active'}
+          >
             {states.map((item) => (
               <option key={item.value} value={item.value}>
                 {item.label}
@@ -200,9 +220,7 @@ function LinksPage() {
                       </td>
                       <td>
                         <div className="cell-main">
-                          <span className="cell-title">
-                            {link.campaignName ?? 'No campaign'}
-                          </span>
+                          <span className="cell-title">{link.campaignName ?? 'No campaign'}</span>
                           <span className="cell-sub" title={link.destinationUrl}>
                             {link.destinationUrl}
                           </span>
@@ -288,8 +306,8 @@ function LinkCard({ link }: { link: LinkListItem }) {
             /{link.slug}
           </Link>
           <div className="small muted" style={{ marginTop: 2 }}>
-            {link.campaignName ?? 'No campaign'} · {link.clicks7d.toLocaleString('en-US')} clicks
-            in 7d
+            {link.campaignName ?? 'No campaign'} · {link.clicks7d.toLocaleString('en-US')} clicks in
+            7d
           </div>
         </div>
         <StatePill state={link.state} />

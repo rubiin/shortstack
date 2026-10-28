@@ -1,6 +1,7 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { getEditorDataFn } from '~/server/functions/links'
+
 import { LinkEditor } from '~/components/link-editor'
+import { getEditorDataFn } from '~/server/functions/links'
 
 export const Route = createFileRoute('/app/links/new')({
   loader: () => getEditorDataFn({ data: {} }),

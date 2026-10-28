@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
+
 import type { LinkState } from '~/domain/time'
 
 export function StatePill({ state, expiring = false }: { state: LinkState; expiring?: boolean }) {
@@ -13,12 +14,18 @@ export function StatePill({ state, expiring = false }: { state: LinkState; expir
         : state === 'expired'
           ? 'Expired'
           : 'Archived'
-  return <span className={`pill pill--${expiring && state === 'active' ? 'expired' : state}`}>{label}</span>
+  return (
+    <span className={`pill pill--${expiring && state === 'active' ? 'expired' : state}`}>
+      {label}
+    </span>
+  )
 }
 
 export function StatusPill({ status }: { status: string }) {
   const safe = status.replace(/[^a-z]/g, '')
-  return <span className={`pill pill--${safe}`}>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
+  return (
+    <span className={`pill pill--${safe}`}>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
+  )
 }
 
 export function StatCard({
@@ -112,13 +119,29 @@ export function CopyButton({
         onClick={() => void copy()}
       >
         <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none">
-          <rect x="5.5" y="5.5" width="8" height="8" rx="1.6" stroke="currentColor" strokeWidth="1.4" />
-          <path d="M10.5 5.5v-1A1.5 1.5 0 0 0 9 3H4a1.5 1.5 0 0 0-1.5 1.5V10A1.5 1.5 0 0 0 4 11.5h1" stroke="currentColor" strokeWidth="1.4" />
+          <rect
+            x="5.5"
+            y="5.5"
+            width="8"
+            height="8"
+            rx="1.6"
+            stroke="currentColor"
+            strokeWidth="1.4"
+          />
+          <path
+            d="M10.5 5.5v-1A1.5 1.5 0 0 0 9 3H4a1.5 1.5 0 0 0-1.5 1.5V10A1.5 1.5 0 0 0 4 11.5h1"
+            stroke="currentColor"
+            strokeWidth="1.4"
+          />
         </svg>
         {label}
       </button>
       <span className="copy-status" role="status" aria-live="polite">
-        {status === 'copied' ? 'Copied' : status === 'error' ? 'Copy failed — select the URL manually.' : ''}
+        {status === 'copied'
+          ? 'Copied'
+          : status === 'error'
+            ? 'Copy failed — select the URL manually.'
+            : ''}
       </span>
     </span>
   )

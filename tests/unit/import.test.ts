@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import {
   IMPORT_FIELDS,
   autoMap,
@@ -37,10 +38,7 @@ describe('validateMapping', () => {
   })
 
   it('rejects missing and repeated columns', () => {
-    const repeated = validateMapping(
-      { slug: 'Slug', destination_url: 'Slug' },
-      headers,
-    )
+    const repeated = validateMapping({ slug: 'Slug', destination_url: 'Slug' }, headers)
     expect(repeated.some((error) => /more than once/.test(error.message))).toBe(true)
     const missing = validateMapping({ slug: 'Nope', destination_url: 'Destination URL' }, headers)
     expect(missing.some((error) => /not in the CSV/.test(error.message))).toBe(true)

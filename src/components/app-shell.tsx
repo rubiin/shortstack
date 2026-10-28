@@ -1,9 +1,11 @@
-import type { ReactNode } from 'react'
-import { useEffect, useState } from 'react'
 import { Link, useRouter } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
-import { logoutFn } from '~/server/functions/auth'
+import type { ReactNode } from 'react'
+import { useEffect, useState } from 'react'
+
 import type { AuthUser } from '~/domain/authz'
+import { logoutFn } from '~/server/functions/auth'
+
 import { Spinner } from './ui'
 
 const navItems = [
@@ -78,11 +80,21 @@ function ThemeToggle() {
       {theme === 'dark' ? (
         <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none">
           <circle cx="8" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.4" />
-          <path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.13 1.13M11.47 11.47l1.13 1.13M3.4 12.6l1.13-1.13M11.47 4.53l1.13-1.13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          <path
+            d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.13 1.13M11.47 11.47l1.13 1.13M3.4 12.6l1.13-1.13M11.47 4.53l1.13-1.13"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+          />
         </svg>
       ) : (
         <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M13.2 9.1A5.2 5.2 0 0 1 6.9 2.8a5.3 5.3 0 1 0 6.3 6.3Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+          <path
+            d="M13.2 9.1A5.2 5.2 0 0 1 6.9 2.8a5.3 5.3 0 1 0 6.3 6.3Z"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinejoin="round"
+          />
         </svg>
       )}
     </button>
@@ -134,7 +146,12 @@ export function AppShell({ user, children }: { user: AuthUser; children: ReactNo
             aria-label="Close navigation"
           >
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M12.5 3.5 3.5 12.5M3.5 3.5l9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              <path
+                d="M12.5 3.5 3.5 12.5M3.5 3.5l9 9"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
         </div>
@@ -149,7 +166,18 @@ export function AppShell({ user, children }: { user: AuthUser; children: ReactNo
               activeProps={{ 'aria-current': 'page' }}
               onClick={() => setNavOpen(false)}
             >
-              <svg className="side-ico" aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                className="side-ico"
+                aria-hidden="true"
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 {item.icon}
               </svg>
               {item.label}
@@ -197,7 +225,12 @@ export function AppShell({ user, children }: { user: AuthUser; children: ReactNo
             onClick={() => setNavOpen(true)}
           >
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M2.5 4h11M2.5 8h11M2.5 12h11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              <path
+                d="M2.5 4h11M2.5 8h11M2.5 12h11"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
           <Link to="/app/links" className="brand" aria-label="Shortstack links dashboard">

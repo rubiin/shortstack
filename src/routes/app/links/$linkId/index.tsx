@@ -1,10 +1,11 @@
-import { useRef, useState } from 'react'
 import { Link, createFileRoute, useRouter } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
-import { getLinkFn, setArchivedFn } from '~/server/functions/links'
-import type { LinkDetail } from '~/domain/types'
+import { useRef, useState } from 'react'
+
+import { CopyButton, InlineAlert, StatePill, Toast } from '~/components/ui'
 import { formatUtc } from '~/domain/time'
-import { CopyButton, Field, InlineAlert, StatePill, Toast } from '~/components/ui'
+import type { LinkDetail } from '~/domain/types'
+import { getLinkFn, setArchivedFn } from '~/server/functions/links'
 
 type DetailSearch = { saved?: number; archived?: string }
 
@@ -55,10 +56,13 @@ function LinkDetailPage() {
             </Link>
           ) : null}
           {link.canArchive ? (
-            <ArchiveControl link={link} onDone={(archived) => {
-              setToast(archived ? 'Link archived. It no longer redirects.' : 'Link restored.')
-              void router.invalidate()
-            }} />
+            <ArchiveControl
+              link={link}
+              onDone={(archived) => {
+                setToast(archived ? 'Link archived. It no longer redirects.' : 'Link restored.')
+                void router.invalidate()
+              }}
+            />
           ) : null}
         </div>
       </div>
@@ -102,7 +106,9 @@ function LinkDetailPage() {
             <div className="card-header">
               <div>
                 <h2>Destination</h2>
-                <p className="small muted">Visitors go straight here. We never fetch it server-side.</p>
+                <p className="small muted">
+                  Visitors go straight here. We never fetch it server-side.
+                </p>
               </div>
             </div>
             <div className="card-body stack">

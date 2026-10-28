@@ -22,12 +22,12 @@
 
 ## Screenshots
 
-| Landing page | Link desk |
-| --- | --- |
+| Landing page                                                                        | Link desk                                                                                                   |
+| ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | <img src="docs/screenshots/landing.png" alt="Shortstack landing page" width="100%"> | <img src="docs/screenshots/links.png" alt="Link desk with stats, filters, and the link table" width="100%"> |
 
-| Analytics | Bulk import |
-| --- | --- |
+| Analytics                                                                                           | Bulk import                                                                       |
+| --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | <img src="docs/screenshots/analytics.png" alt="Privacy-minimized analytics dashboard" width="100%"> | <img src="docs/screenshots/import.png" alt="CSV bulk import wizard" width="100%"> |
 
 ## Features
@@ -43,14 +43,14 @@
 
 ## Tech stack
 
-| Layer      | Choice                                       |
-| ---------- | -------------------------------------------- |
-| Framework  | TanStack Start + TanStack React Router       |
-| UI         | React 19, Vite                               |
-| Database   | SQLite (better-sqlite3) with SQL migrations  |
-| Validation | Zod                                          |
+| Layer      | Choice                                        |
+| ---------- | --------------------------------------------- |
+| Framework  | TanStack Start + TanStack React Router        |
+| UI         | React 19, Vite                                |
+| Database   | SQLite (better-sqlite3) with SQL migrations   |
+| Validation | Zod                                           |
 | Tests      | Vitest (unit + integration), Playwright (E2E) |
-| Runtime    | Node.js ≥ 22.12                              |
+| Runtime    | Node.js ≥ 22.12                               |
 
 ## Getting started
 
@@ -64,41 +64,41 @@ npm run dev
 
 The app runs at http://localhost:3000 with a web process and a job worker. Seeded demo accounts (password is the value of `SEED_PASSWORD`, default `shortstack-demo`):
 
-| Role   | Email                     |
-| ------ | ------------------------- |
-| Owner  | `maya@northstar.example`  |
-| Member | `theo@northstar.example`  |
+| Role   | Email                    |
+| ------ | ------------------------ |
+| Owner  | `maya@northstar.example` |
+| Member | `theo@northstar.example` |
 
 ## Configuration
 
 All settings live in `.env`; see `.env.example` for the full list with defaults.
 
-| Variable                    | Purpose                                                      |
-| --------------------------- | ------------------------------------------------------------ |
-| `APP_ORIGIN`                | Canonical application URL.                                   |
-| `SHORT_LINK_ORIGIN`         | Host used for generated short links.                         |
-| `SESSION_SECRET`            | Session token hashing. 32+ random characters in production.  |
-| `FILE_SIGNING_SECRET`       | Signs download URLs for exports and QR archives.             |
-| `DATABASE_PATH`             | SQLite database location.                                    |
-| `FILE_STORAGE_DIR`          | Uploaded and generated file storage.                         |
-| `EXPORT_RETENTION_DAYS`     | Lifetime of generated export files.                          |
-| `RAW_IMPORT_RETENTION_DAYS` | Lifetime of raw CSV text and raw import JSON.                |
-| `CLICK_RETENTION_MONTHS`    | Lifetime of stored click events.                             |
-| `CLOUDFLARE_PURGE_ENABLED`  | Enables the Cloudflare purge adapter (off by default).       |
-| `WORKER_POLL_MS`            | Background worker poll interval.                             |
+| Variable                    | Purpose                                                     |
+| --------------------------- | ----------------------------------------------------------- |
+| `APP_ORIGIN`                | Canonical application URL.                                  |
+| `SHORT_LINK_ORIGIN`         | Host used for generated short links.                        |
+| `SESSION_SECRET`            | Session token hashing. 32+ random characters in production. |
+| `FILE_SIGNING_SECRET`       | Signs download URLs for exports and QR archives.            |
+| `DATABASE_PATH`             | SQLite database location.                                   |
+| `FILE_STORAGE_DIR`          | Uploaded and generated file storage.                        |
+| `EXPORT_RETENTION_DAYS`     | Lifetime of generated export files.                         |
+| `RAW_IMPORT_RETENTION_DAYS` | Lifetime of raw CSV text and raw import JSON.               |
+| `CLICK_RETENTION_MONTHS`    | Lifetime of stored click events.                            |
+| `CLOUDFLARE_PURGE_ENABLED`  | Enables the Cloudflare purge adapter (off by default).      |
+| `WORKER_POLL_MS`            | Background worker poll interval.                            |
 
 ## Commands
 
-| Command             | Description                                   |
-| ------------------- | --------------------------------------------- |
-| `npm run dev`       | Web server and worker in watch mode.          |
-| `npm run build`     | Production build into `.output/`.              |
-| `npm start`         | Run the built server.                         |
-| `npm run worker`    | Run the background worker standalone.         |
-| `npm run db:migrate`| Apply SQL migrations.                         |
-| `npm run db:seed`   | Seed demo workspace and data.                 |
-| `npm run db:reset`  | Drop and recreate local data.                 |
-| `npm run db:setup`  | Migrate, then seed.                           |
+| Command              | Description                           |
+| -------------------- | ------------------------------------- |
+| `npm run dev`        | Web server and worker in watch mode.  |
+| `npm run build`      | Production build into `.output/`.     |
+| `npm start`          | Run the built server.                 |
+| `npm run worker`     | Run the background worker standalone. |
+| `npm run db:migrate` | Apply SQL migrations.                 |
+| `npm run db:seed`    | Seed demo workspace and data.         |
+| `npm run db:reset`   | Drop and recreate local data.         |
+| `npm run db:setup`   | Migrate, then seed.                   |
 
 ## Testing
 

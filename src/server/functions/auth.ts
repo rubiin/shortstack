@@ -1,15 +1,23 @@
+import { redirect } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { getRequestIP, setResponseHeader } from '@tanstack/react-start/server'
-import { redirect } from '@tanstack/react-router'
 import { z } from 'zod'
+
+import type { AuthUser } from '~/domain/authz'
+
+import {
+  getSessionUser,
+  attachSessionCookie,
+  revokeCurrentSession,
+  createSession,
+  requireSessionUser,
+} from '../auth'
 import { getDb } from '../db'
 import { nowIso } from '../ids'
-import { getSessionUser, attachSessionCookie, revokeCurrentSession, createSession, requireSessionUser } from '../auth'
+import { logger } from '../log'
 import { verifyPassword, hashPassword } from '../password'
 import { rateLimitOrThrow } from '../rate-limit'
-import { logger } from '../log'
-import { actionError, ok, type ActionResult } from './result'
-import type { AuthUser } from '~/domain/authz'
+import { actionError, type ActionResult } from './result'
 
 const loginSchema = z.object({
   email: z.string().trim().min(1, 'Enter your email.').max(254),
@@ -39,7 +47,9 @@ export const loginFn = createServerFn({ method: 'POST' })
       rateLimitOrThrow('login-account', `${ip}:${email}`, 8, 10 * 60 * 1000)
 
       const row = db
-        .prepare('SELECT id, workspace_id, email, name, role, password_hash, disabled_at FROM users WHERE email = ?')
+        .prepare(
+          'SELECT id, workspace_id, email, name, role, password_hash, disabled_at FROM users WHERE email = ?',
+        )
         .get(email) as
         | {
             id: string

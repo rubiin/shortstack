@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { generateSlug, normalizeSlug, RESERVED_SLUGS, suggestAvailableSlug } from '../../src/domain/slug'
+
+import {
+  generateSlug,
+  normalizeSlug,
+  RESERVED_SLUGS,
+  suggestAvailableSlug,
+} from '../../src/domain/slug'
 
 describe('normalizeSlug', () => {
   it('trims, lowercases, and collapses spaces and underscores', () => {
-    expect(normalizeSlug('  Spring__Field   Guide  ')).toEqual({ ok: true, slug: 'spring-field-guide' })
+    expect(normalizeSlug('  Spring__Field   Guide  ')).toEqual({
+      ok: true,
+      slug: 'spring-field-guide',
+    })
   })
 
   it('normalises full-width characters', () => {

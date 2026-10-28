@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { analyticsFor, createAnalyticsExport, getExportStatus, listExports } from '../../src/server/analytics'
+
+import { NotFoundError } from '../../src/domain/authz'
+import { getStorage } from '../../src/server/adapters/storage'
+import {
+  analyticsFor,
+  createAnalyticsExport,
+  getExportStatus,
+  listExports,
+} from '../../src/server/analytics'
 import { getDb } from '../../src/server/db'
 import { runWorker } from '../../src/server/worker'
-import { getStorage } from '../../src/server/adapters/storage'
-import { NotFoundError } from '../../src/domain/authz'
 import { seedWorkspace } from '../helpers'
 
 function insertClick(input: {
@@ -60,10 +66,36 @@ function fixtureWithClicks() {
       timestamp,
     )
   }
-  insertClick({ id: 'c1', workspaceId: fixture.workspaceId, linkId: 'lnk_one', day: '2026-10-26', referrer: 'linkedin.com', device: 'mobile' })
-  insertClick({ id: 'c2', workspaceId: fixture.workspaceId, linkId: 'lnk_one', day: '2026-10-26', referrer: 'linkedin.com', device: 'mobile' })
-  insertClick({ id: 'c3', workspaceId: fixture.workspaceId, linkId: 'lnk_one', day: '2026-10-25', country: 'DE' })
-  insertClick({ id: 'c4', workspaceId: fixture.workspaceId, linkId: 'lnk_two', day: '2026-10-24', referrer: 'google.com' })
+  insertClick({
+    id: 'c1',
+    workspaceId: fixture.workspaceId,
+    linkId: 'lnk_one',
+    day: '2026-10-26',
+    referrer: 'linkedin.com',
+    device: 'mobile',
+  })
+  insertClick({
+    id: 'c2',
+    workspaceId: fixture.workspaceId,
+    linkId: 'lnk_one',
+    day: '2026-10-26',
+    referrer: 'linkedin.com',
+    device: 'mobile',
+  })
+  insertClick({
+    id: 'c3',
+    workspaceId: fixture.workspaceId,
+    linkId: 'lnk_one',
+    day: '2026-10-25',
+    country: 'DE',
+  })
+  insertClick({
+    id: 'c4',
+    workspaceId: fixture.workspaceId,
+    linkId: 'lnk_two',
+    day: '2026-10-24',
+    referrer: 'google.com',
+  })
   insertClick({ id: 'old', workspaceId: fixture.workspaceId, linkId: 'lnk_two', day: '2026-10-10' })
   return fixture
 }
@@ -85,8 +117,21 @@ describe('analytics', () => {
          (id, workspace_id, domain_id, slug, destination_url, expires_timezone, enabled, created_by, updated_by, created_at, updated_at)
          VALUES (?, ?, ?, 'other', 'https://example.com/other', 'UTC', 1, ?, ?, ?, ?)`,
       )
-      .run(otherLink, other.workspaceId, other.domainId, other.userId, other.userId, new Date().toISOString(), new Date().toISOString())
-    insertClick({ id: 'foreign', workspaceId: other.workspaceId, linkId: otherLink, day: '2026-10-26' })
+      .run(
+        otherLink,
+        other.workspaceId,
+        other.domainId,
+        other.userId,
+        other.userId,
+        new Date().toISOString(),
+        new Date().toISOString(),
+      )
+    insertClick({
+      id: 'foreign',
+      workspaceId: other.workspaceId,
+      linkId: otherLink,
+      day: '2026-10-26',
+    })
 
     const data = analyticsFor({
       workspaceId: fixture.workspaceId,
@@ -97,10 +142,18 @@ describe('analytics', () => {
     expect(data.previousClicks).toBe(0)
     expect(data.deltaPercent).toBeNull()
     expect(data.topReferrer).toMatchObject({ key: 'linkedin.com', clicks: 2, share: 50 })
-    expect(data.topCountry).toMatchObject({ key: 'US', label: 'United States', clicks: 3, share: 75 })
+    expect(data.topCountry).toMatchObject({
+      key: 'US',
+      label: 'United States',
+      clicks: 3,
+      share: 75,
+    })
     expect(data.mobileShare).toBe(50)
     expect(data.trend).toHaveLength(7)
-    expect(data.trend.find((point) => point.day === '2026-10-26')).toMatchObject({ current: 2, previous: 0 })
+    expect(data.trend.find((point) => point.day === '2026-10-26')).toMatchObject({
+      current: 2,
+      previous: 0,
+    })
     expect(data.topLinks[0]).toMatchObject({ id: 'lnk_one', clicks: 3 })
     expect(data.hasAnyClicks).toBe(true)
 
@@ -115,13 +168,22 @@ describe('analytics', () => {
     expect(filtered.topLinks).toHaveLength(1)
 
     expect(() =>
-      analyticsFor({ workspaceId: fixture.workspaceId, from: '2026-10-20', to: '2026-10-26', campaignId: 'cmp_missing' }),
+      analyticsFor({
+        workspaceId: fixture.workspaceId,
+        from: '2026-10-20',
+        to: '2026-10-26',
+        campaignId: 'cmp_missing',
+      }),
     ).toThrow(NotFoundError)
   })
 
   it('returns an empty analytics shape without click data', () => {
     const fixture = seedWorkspace()
-    const data = analyticsFor({ workspaceId: fixture.workspaceId, from: '2026-10-20', to: '2026-10-26' })
+    const data = analyticsFor({
+      workspaceId: fixture.workspaceId,
+      from: '2026-10-20',
+      to: '2026-10-26',
+    })
     expect(data.totalClicks).toBe(0)
     expect(data.trend.every((point) => point.current === 0)).toBe(true)
     expect(data.topReferrer).toBeNull()
@@ -155,10 +217,16 @@ describe('analytics exports', () => {
     const verified = getStorage().verifySignedUrl(token)
     expect(verified).toMatchObject({ key: `exports/${fixture.workspaceId}/${id}.csv` })
     const file = await getStorage().get(verified!.key)
-    expect(file.bytes.toString()).toContain('link_slug,domain,campaign,day,country_code,referrer_domain,device_class,clicks')
-    expect(file.bytes.toString()).toContain('one,links.test,Test Campaign,2026-10-26,US,linkedin.com,mobile,2')
+    expect(file.bytes.toString()).toContain(
+      'link_slug,domain,campaign,day,country_code,referrer_domain,device_class,clicks',
+    )
+    expect(file.bytes.toString()).toContain(
+      'one,links.test,Test Campaign,2026-10-26,US,linkedin.com,mobile,2',
+    )
     expect(listExports(fixture.workspaceId)[0]).toMatchObject({ id, status: 'ready' })
-    expect(getDb().prepare("SELECT status FROM jobs WHERE kind = 'export.generate'").get()).toMatchObject({
+    expect(
+      getDb().prepare("SELECT status FROM jobs WHERE kind = 'export.generate'").get(),
+    ).toMatchObject({
       status: 'succeeded',
     })
     expect(() => getExportStatus({ workspaceId: 'ws_other', exportId: id })).not.toThrow()

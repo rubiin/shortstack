@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react'
-import type { FormEvent } from 'react'
 import { Link, createFileRoute, useRouter } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
-import { createExportFn, getAnalyticsFn, getExportStatusFn } from '~/server/functions/analytics'
-import type { AnalyticsData, BreakdownItem, ExportSummary } from '~/domain/types'
-import { formatUtc } from '~/domain/time'
+import { useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
+
 import { EmptyState, InlineAlert, StatCard } from '~/components/ui'
+import { formatUtc } from '~/domain/time'
+import type { AnalyticsData, BreakdownItem, ExportSummary } from '~/domain/types'
+import { createExportFn, getAnalyticsFn, getExportStatusFn } from '~/server/functions/analytics'
 
 type AnalyticsSearch = {
   from?: string
@@ -182,10 +183,20 @@ function AnalyticsPage() {
           </div>
         </div>
 
-        <form className="range-form" onSubmit={applyRange} key={`${data.range.from}-${data.range.to}`}>
+        <form
+          className="range-form"
+          onSubmit={applyRange}
+          key={`${data.range.from}-${data.range.to}`}
+        >
           <div className="field">
             <label htmlFor="from">From</label>
-            <input id="from" className="input" type="date" name="from" defaultValue={data.range.from} />
+            <input
+              id="from"
+              className="input"
+              type="date"
+              name="from"
+              defaultValue={data.range.from}
+            />
           </div>
           <div className="field">
             <label htmlFor="to">To</label>
@@ -259,7 +270,9 @@ function AnalyticsPage() {
             <StatCard
               label="Mobile share"
               value={`${data.mobileShare}%`}
-              note={data.topReferrer ? `Top referrer: ${data.topReferrer.label}` : 'No referrer data'}
+              note={
+                data.topReferrer ? `Top referrer: ${data.topReferrer.label}` : 'No referrer data'
+              }
             />
           </div>
 
@@ -309,7 +322,11 @@ function AnalyticsPage() {
                 </div>
               </div>
               <div className="card-body">
-                <Breakdown items={data.countries} empty="No country data in this window." tone="rust" />
+                <Breakdown
+                  items={data.countries}
+                  empty="No country data in this window."
+                  tone="rust"
+                />
               </div>
             </section>
 
@@ -321,7 +338,11 @@ function AnalyticsPage() {
                 </div>
               </div>
               <div className="card-body">
-                <Breakdown items={data.devices} empty="No device data in this window." tone="gold" />
+                <Breakdown
+                  items={data.devices}
+                  empty="No device data in this window."
+                  tone="gold"
+                />
               </div>
             </section>
 
@@ -393,11 +414,7 @@ function AnalyticsPage() {
                     onClick={() => void startExport()}
                     disabled={creating || Boolean(activeExport)}
                   >
-                    {creating
-                      ? 'Queuing…'
-                      : activeExport
-                        ? 'Generating…'
-                        : 'Create export'}
+                    {creating ? 'Queuing…' : activeExport ? 'Generating…' : 'Create export'}
                   </button>
                 </div>
 
@@ -454,13 +471,19 @@ function AnalyticsPage() {
 function TrendChart({ data }: { data: AnalyticsData }) {
   const max = Math.max(
     1,
-    ...data.trend.map((point) => Math.max(point.current, data.filters.compare ? point.previous : 0)),
+    ...data.trend.map((point) =>
+      Math.max(point.current, data.filters.compare ? point.previous : 0),
+    ),
   )
   return (
     <div className="chart">
       <div className="chart-bars" aria-hidden="true">
         {data.trend.map((point) => (
-          <div key={point.day} className="chart-col" title={`${point.day}: ${point.current} clicks`}>
+          <div
+            key={point.day}
+            className="chart-col"
+            title={`${point.day}: ${point.current} clicks`}
+          >
             {data.filters.compare ? (
               <i
                 className="chart-col--prev"

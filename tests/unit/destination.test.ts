@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
+
 import { normalizeDestination, schemeOf } from '../../src/domain/destination'
 
 describe('normalizeDestination', () => {
   it('accepts http and https URLs and preserves query strings', () => {
-    expect(normalizeDestination('https://example.com/path?utm_source=shortstack&token=secret')).toEqual({
+    expect(
+      normalizeDestination('https://example.com/path?utm_source=shortstack&token=secret'),
+    ).toEqual({
       ok: true,
       url: 'https://example.com/path?utm_source=shortstack&token=secret',
     })
@@ -18,7 +21,12 @@ describe('normalizeDestination', () => {
   })
 
   it('rejects non-HTTP schemes', () => {
-    for (const value of ['javascript:alert(1)', 'data:text/html,hi', 'ftp://example.com', 'mailto:a@b.c']) {
+    for (const value of [
+      'javascript:alert(1)',
+      'data:text/html,hi',
+      'ftp://example.com',
+      'mailto:a@b.c',
+    ]) {
       expect(normalizeDestination(value)).toMatchObject({ ok: false })
     }
   })
@@ -31,7 +39,9 @@ describe('normalizeDestination', () => {
   it('rejects control characters, spaces, and max-length overflow', () => {
     expect(normalizeDestination('https://example.com/\u0000evil')).toMatchObject({ ok: false })
     expect(normalizeDestination('https://example.com/a b')).toMatchObject({ ok: false })
-    expect(normalizeDestination(`https://example.com/${'a'.repeat(2048)}`)).toMatchObject({ ok: false })
+    expect(normalizeDestination(`https://example.com/${'a'.repeat(2048)}`)).toMatchObject({
+      ok: false,
+    })
   })
 
   it('rejects malformed and missing hosts', () => {

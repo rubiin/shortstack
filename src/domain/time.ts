@@ -62,7 +62,10 @@ function validDay(value: string): boolean {
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value
 }
 
-export function resolveDateRange(input: { from?: string; to?: string; days?: string | number }, now = new Date()): DateRange {
+export function resolveDateRange(
+  input: { from?: string; to?: string; days?: string | number },
+  now = new Date(),
+): DateRange {
   const today = now.toISOString().slice(0, 10)
   const requestedDays = Math.min(366, Math.max(1, Number(input.days) || 30))
   let to = validDay(input.to ?? '') ? (input.to as string) : today
@@ -71,11 +74,13 @@ export function resolveDateRange(input: { from?: string; to?: string; days?: str
     : addUtcDays(to, -(requestedDays - 1))
 
   if (from > to) [from, to] = [to, from]
-  const span = Math.floor((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000) + 1
+  const span =
+    Math.floor((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000) + 1
   if (span > 366) {
     from = addUtcDays(to, -365)
   }
-  const days = Math.floor((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000) + 1
+  const days =
+    Math.floor((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000) + 1
   return {
     from,
     to,

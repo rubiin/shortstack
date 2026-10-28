@@ -3,7 +3,9 @@ import { getDb, migrate } from '../src/server/db'
 
 migrate()
 const db = getDb()
-const applied = db.prepare('SELECT id, name, applied_at FROM schema_migrations ORDER BY id').all() as Array<{
+const applied = db
+  .prepare('SELECT id, name, applied_at FROM schema_migrations ORDER BY id')
+  .all() as Array<{
   id: string
   name: string
   applied_at: string

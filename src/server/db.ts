@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
+
 import Database from 'better-sqlite3'
 
 type Db = Database.Database
@@ -77,7 +78,9 @@ export function migrate(handle: Db = openDatabase()): void {
     const apply = handle.transaction(() => {
       handle.exec(sql)
       handle
-        .prepare('INSERT INTO schema_migrations (id, name, checksum, applied_at) VALUES (?, ?, ?, ?)')
+        .prepare(
+          'INSERT INTO schema_migrations (id, name, checksum, applied_at) VALUES (?, ?, ?, ?)',
+        )
         .run(id, file, checksum, new Date().toISOString())
     })
     apply()
@@ -118,7 +121,11 @@ export function closeDb(): void {
 }
 
 export function assertSchemaHealthy(handle: Db = getDb()): boolean {
-  const result = handle.prepare("SELECT count(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'short_links'").get() as {
+  const result = handle
+    .prepare(
+      "SELECT count(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'short_links'",
+    )
+    .get() as {
     n: number
   }
   return result.n === 1

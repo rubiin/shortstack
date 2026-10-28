@@ -1,8 +1,11 @@
 import { expect, test } from '@playwright/test'
+
 import { gotoHydrated, requestShortLink, uniqueSlug } from './support'
 
 test.describe('CSV import', () => {
-  test('dry-runs, resolves a duplicate, creates links, and downloads QR codes', async ({ page }) => {
+  test('dry-runs, resolves a duplicate, creates links, and downloads QR codes', async ({
+    page,
+  }) => {
     const slug = uniqueSlug('e2e-import')
     const csv = [
       'slug,destination_url,campaign,note,expires_at,enabled',
@@ -28,13 +31,15 @@ test.describe('CSV import', () => {
     await page.getByRole('button', { name: 'Create 2 links' }).click()
 
     await expect(page.getByRole('heading', { name: 'Imported links' })).toBeVisible()
-    await expect(page.getByText('2 links created. Analytics start on the first click.')).toBeVisible()
+    await expect(
+      page.getByText('2 links created. Analytics start on the first click.'),
+    ).toBeVisible()
     await expect(page.getByRole('link', { name: `/${slug}`, exact: true })).toBeVisible()
     await expect(page.getByRole('link', { name: `/${slug}-2`, exact: true })).toBeVisible()
 
     const qrLink = page.getByRole('link', { name: 'Download QR codes' })
     await expect(qrLink).toBeVisible()
-    const qrResponse = await page.request.get(await qrLink.getAttribute('href') as string)
+    const qrResponse = await page.request.get((await qrLink.getAttribute('href')) as string)
     expect(qrResponse.status()).toBe(200)
     expect(qrResponse.headers()['content-type']).toContain('application/zip')
     const qrBody = await qrResponse.body()

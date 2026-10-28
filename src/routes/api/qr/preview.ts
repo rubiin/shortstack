@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { getDb } from '~/server/db'
-import { getSessionUser } from '~/server/auth'
+
 import { normalizeSlug } from '~/domain/slug'
 import { qrSvg } from '~/server/adapters/qr'
+import { getSessionUser } from '~/server/auth'
+import { getDb } from '~/server/db'
 
 export const Route = createFileRoute('/api/qr/preview')({
   server: {
@@ -19,7 +20,9 @@ export const Route = createFileRoute('/api/qr/preview')({
           return new Response('A valid slug is required.', { status: 400 })
         }
         const domain = getDb()
-          .prepare("SELECT origin FROM domains WHERE id = ? AND workspace_id = ? AND status = 'active'")
+          .prepare(
+            "SELECT origin FROM domains WHERE id = ? AND workspace_id = ? AND status = 'active'",
+          )
           .get(domainId, user.workspaceId) as { origin: string } | undefined
         if (!domain) {
           return new Response('Domain not found.', { status: 404 })

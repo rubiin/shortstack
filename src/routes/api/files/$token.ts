@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+
 import { getStorage, StorageError } from '~/server/adapters/storage'
 
 export const Route = createFileRoute('/api/files/$token')({
@@ -31,10 +32,13 @@ export const Route = createFileRoute('/api/files/$token')({
           })
         } catch (error) {
           const status = error instanceof StorageError && error.code === 'not_found' ? 404 : 500
-          return new Response(status === 404 ? 'That file is no longer available.' : 'The file could not be read.', {
-            status,
-            headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' },
-          })
+          return new Response(
+            status === 404 ? 'That file is no longer available.' : 'The file could not be read.',
+            {
+              status,
+              headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' },
+            },
+          )
         }
       },
     },

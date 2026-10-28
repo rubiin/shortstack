@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+
 import { gotoHydrated, requestShortLink, uniqueSlug } from './support'
 
 test.describe('mobile journeys', () => {
@@ -27,12 +28,14 @@ test.describe('mobile journeys', () => {
   test('imports a CSV and downloads QR codes on a phone-sized screen', async ({ page }) => {
     const slug = uniqueSlug('e2e-mobile-import')
     await gotoHydrated(page, '/app/import')
-    await page.locator('#csv').fill(
-      [
-        'slug,destination_url,campaign,note',
-        `${slug},https://example.com/mobile/import,Mobile Import,One row`,
-      ].join('\n'),
-    )
+    await page
+      .locator('#csv')
+      .fill(
+        [
+          'slug,destination_url,campaign,note',
+          `${slug},https://example.com/mobile/import,Mobile Import,One row`,
+        ].join('\n'),
+      )
     await page.getByRole('button', { name: 'Read CSV and map columns' }).click()
     await expect(page).toHaveURL(/\/app\/import\/imp_[^/]+$/)
     await page.getByRole('button', { name: 'Run dry run' }).click()
@@ -42,7 +45,7 @@ test.describe('mobile journeys', () => {
 
     const qrLink = page.getByRole('link', { name: 'Download QR codes' })
     await expect(qrLink).toBeVisible()
-    const qrResponse = await page.request.get(await qrLink.getAttribute('href') as string)
+    const qrResponse = await page.request.get((await qrLink.getAttribute('href')) as string)
     expect(qrResponse.status()).toBe(200)
     expect(qrResponse.headers()['content-type']).toContain('application/zip')
     expect((await qrResponse.body()).subarray(0, 2).toString()).toBe('PK')
@@ -57,7 +60,7 @@ test.describe('mobile journeys', () => {
     await page.getByRole('button', { name: 'Create export' }).click()
     const download = page.getByRole('link', { name: 'Download', exact: true }).first()
     await expect(download).toBeVisible({ timeout: 25_000 })
-    const response = await page.request.get(await download.getAttribute('href') as string)
+    const response = await page.request.get((await download.getAttribute('href')) as string)
     expect(response.status()).toBe(200)
     expect(response.headers()['content-type']).toContain('text/csv')
     expect(await response.text()).toContain('link_slug,domain,campaign')

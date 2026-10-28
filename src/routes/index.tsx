@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+
 import { getSessionFn } from '~/server/functions/auth'
 import { createAnonymousLinkFn } from '~/server/functions/links'
 
@@ -288,7 +289,11 @@ const FEATURES = [
     icon: 'chart',
     title: 'Advanced analytics',
     body: 'See what every link does with click, device, referrer, and geo reporting as it happens.',
-    points: ['Real-time click stream', 'Device, browser & referrer breakdowns', 'Country-level geo data'],
+    points: [
+      'Real-time click stream',
+      'Device, browser & referrer breakdowns',
+      'Country-level geo data',
+    ],
   },
   {
     art: 'domain',
@@ -309,21 +314,33 @@ const FEATURES = [
     icon: 'qr',
     title: 'QR codes',
     body: 'Generate a QR code for any link and change where it points without a new print run.',
-    points: ['Editable destinations, no reprint', 'Full colors, logo & finder shapes', 'PNG, SVG & PDF exports'],
+    points: [
+      'Editable destinations, no reprint',
+      'Full colors, logo & finder shapes',
+      'PNG, SVG & PDF exports',
+    ],
   },
   {
     art: 'code',
     icon: 'code',
     title: 'API access',
     body: 'Create and manage links from your own product with a plain REST API.',
-    points: ['REST endpoints for every object', 'JavaScript and Node.js clients', 'Bulk operations & webhooks'],
+    points: [
+      'REST endpoints for every object',
+      'JavaScript and Node.js clients',
+      'Bulk operations & webhooks',
+    ],
   },
   {
     art: 'tags',
     icon: 'folder',
     title: 'Link management',
     body: 'Keep thousands of links tidy with folders, tags, search, and bulk editing.',
-    points: ['Folders, tags & search', 'Bulk create / edit via CSV or API', 'UTM builder & campaign tracking'],
+    points: [
+      'Folders, tags & search',
+      'Bulk create / edit via CSV or API',
+      'UTM builder & campaign tracking',
+    ],
   },
 ]
 
@@ -406,14 +423,19 @@ const FAQS: Array<[string, string]> = [
   ],
 ]
 
-const CTA_BADGES = ['No credit card required', 'Free plan forever', 'Upgrade anytime', 'Fast support response']
+const CTA_BADGES = [
+  'No credit card required',
+  'Free plan forever',
+  'Upgrade anytime',
+  'Fast support response',
+]
 
 const FOOTER_COLUMNS: Array<{ title: string; links: Array<{ label: string; href: string }> }> = [
   {
     title: 'Product',
     links: [
       { label: 'Features', href: '#features' },
-          { label: 'QR codes', href: '#features' },
+      { label: 'QR codes', href: '#features' },
       { label: 'API access', href: '#features' },
       { label: 'Pricing', href: '#cta' },
     ],
@@ -502,7 +524,15 @@ function HomePage() {
         <div className="lp-container lp-header-inner">
           <a className="lp-brand" href="/">
             <span className="lp-brand-mark" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#fff"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+              >
                 <path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1 1" />
                 <path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1-1" />
               </svg>
@@ -555,8 +585,9 @@ function HomePage() {
               </span>
             </h1>
             <p className="lp-lede">
-              Make branded short links on your own domain or on ours. Free link shortener with detailed
-              analytics, QR codes, and an API — shorten a URL, share it, and watch every click come in.
+              Make branded short links on your own domain or on ours. Free link shortener with
+              detailed analytics, QR codes, and an API — shorten a URL, share it, and watch every
+              click come in.
             </p>
             <div className="lp-hero-actions">
               <a className="lp-btn lp-btn--primary" href="/login">
@@ -657,7 +688,9 @@ function HomePage() {
         <div className="lp-container">
           <div className="lp-section-head">
             <h2>Everything you need to manage links</h2>
-            <p>Advanced link management tools that help you track performance and optimize campaigns</p>
+            <p>
+              Advanced link management tools that help you track performance and optimize campaigns
+            </p>
           </div>
           <div className="lp-feature-grid">
             {FEATURES.map((f) => (
@@ -792,7 +825,15 @@ function HomePage() {
             <div className="lp-footer-brand">
               <a className="lp-brand" href="/">
                 <span className="lp-brand-mark" aria-hidden="true">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#fff"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                  >
                     <path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1 1" />
                     <path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1-1" />
                   </svg>
@@ -859,8 +900,17 @@ function FeatureArt({ kind }: { kind: string }) {
       <div className="lp-art lp-art--chart" aria-hidden="true">
         <span className="lp-art-badge">+47%</span>
         <svg viewBox="0 0 260 110" preserveAspectRatio="none">
-          <polyline points="0,96 40,80 80,86 120,58 160,64 200,32 260,12" fill="none" stroke="#1fb07e" strokeWidth="3" />
-          <polyline points="0,96 40,80 80,86 120,58 160,64 200,32 260,12 260,110 0,110" fill="rgba(31,176,126,.12)" stroke="none" />
+          <polyline
+            points="0,96 40,80 80,86 120,58 160,64 200,32 260,12"
+            fill="none"
+            stroke="#1fb07e"
+            strokeWidth="3"
+          />
+          <polyline
+            points="0,96 40,80 80,86 120,58 160,64 200,32 260,12 260,110 0,110"
+            fill="rgba(31,176,126,.12)"
+            stroke="none"
+          />
         </svg>
       </div>
     )
@@ -927,7 +977,7 @@ function FeatureArt({ kind }: { kind: string }) {
         <pre>
           <span className="lp-code-method">POST</span> /v1/links{'\n'}
           {'{'}
-          {'\n'}  "destination": <em>"https://example.com/sale"</em>,{'\n'}  "slug": <em>"summer"</em>
+          {'\n'} "destination": <em>"https://example.com/sale"</em>,{'\n'} "slug": <em>"summer"</em>
           {'\n'}
           {'}'}
         </pre>

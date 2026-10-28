@@ -1,0 +1,30 @@
+import { defineConfig } from 'oxfmt'
+
+export default defineConfig({
+  printWidth: 100,
+  singleQuote: true,
+  semi: false,
+  tabWidth: 2,
+  trailingComma: 'all',
+  arrowParens: 'always',
+  bracketSpacing: true,
+  endOfLine: 'lf',
+  sortImports: true,
+  ignorePatterns: [
+    'node_modules/**',
+    '.output/**',
+    '.nitro/**',
+    '.tanstack/**',
+    'src/routeTree.gen.ts',
+    'public/**',
+    'storage/**',
+    'data/**',
+    'dist/**',
+    'coverage/**',
+    'playwright-report/**',
+    'test-results/**',
+    'pnpm-lock.yaml',
+    'pnpm-workspace.yaml',
+    'LICENSE*',
+  ],
+})

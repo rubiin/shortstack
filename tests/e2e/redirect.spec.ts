@@ -1,8 +1,11 @@
 import { expect, test } from '@playwright/test'
+
 import { gotoHydrated, reloadHydrated, requestShortLink, totalClicks } from './support'
 
 test.describe('public redirects', () => {
-  test('redirects quickly while preserving destination tracking and not counting unavailable links', async ({ page }) => {
+  test('redirects quickly while preserving destination tracking and not counting unavailable links', async ({
+    page,
+  }) => {
     await page.goto('/')
     await expect(page).toHaveURL(/\/app\/links/)
 
